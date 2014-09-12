@@ -9,11 +9,11 @@ from twisted.internet import reactor
 import opscore.actor.model
 import actorcore.Actor
 
-class SOS(actorcore.Actor.Actor):
+class Hartmann(actorcore.Actor.Actor):
     def __init__(self, name, productName=None, configFile=None, debugLevel=10):
         actorcore.Actor.Actor.__init__(self, name, productName=productName, configFile=configFile)
 
-        self.headURL = '$HeadURL: svn+ssh://sdss3svn@sdss3.org/repo/ops/actors/sosActor/trunk/python/sosActor/sosActor_main.py $'
+        self.headURL = '$HeadURL: svn+ssh://sdss3svn@sdss3.org/repo/ops/actors/hartmannActor/trunk/python/hartmannActor/hartmannActor_main.py $'
 
         self.logger.setLevel(debugLevel)
         self.logger.propagate = True
@@ -55,4 +55,4 @@ class SOS(actorcore.Actor.Actor):
 # To work
 #
 if __name__ == '__main__':
-    sos = SOS('sos', 'sosActor', debugLevel=5)
+    hartmann = Hartmann('hartmann', 'hartmannActor', debugLevel=5)

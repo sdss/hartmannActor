@@ -9,17 +9,17 @@ import opscore.protocols.keys as keys
 import opscore.protocols.types as types
 from opscore.utility.qstr import qstr
 
-from sosActor import boss_collimate
+from hartmannActor import boss_collimate
 
-class sosCmd(object):
-    '''Wrap commands to the sos actor'''
+class hartmannCmd(object):
+    '''Wrap commands to the hartmann actor'''
 
     def __init__(self, actor):
         self.actor = actor
         #
         # Declare commands
         #
-        self.keys = keys.KeysDictionary("sos_sos", (1,1),
+        self.keys = keys.KeysDictionary("hartmann_hartmann", (1,1),
                                         keys.Key("id", types.Int(), help="exposure number of first hartmann pair to process"),
                                         keys.Key("noCorrect", help="if set, do not apply any recommended corrections."),
                                         keys.Key("noSubframe", help="if set, take fullframe images."),

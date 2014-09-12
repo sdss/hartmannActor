@@ -1,11 +1,10 @@
 * text=auto !eol
-bin/docollimate -text
-etc/sos.cfg -text
-python/sosActor/Commands/__init__.py -text
-python/sosActor/Commands/sosCmd.py -text
-python/sosActor/__init__.py -text
-python/sosActor/boss_collimate.py -text
-python/sosActor/sosActor_main.py -text
+etc/hartmann.cfg -text
+python/hartmannActor/Commands/__init__.py -text
+python/hartmannActor/Commands/hartmannCmd.py -text
+python/hartmannActor/__init__.py -text
+python/hartmannActor/boss_collimate.py -text
+python/hartmannActor/hartmannActor_main.py -text
 /setup.py -text
-test_sosActor/test_boss_collimate.py -text
-ups/sosActor.table -text
+test_hartmannActor/test_boss_collimate.py -text
+ups/hartmannActor.table -text

@@ -6,7 +6,7 @@ import unittest
 from opscore.actor.model import Model
 from opscore.actor import cmdkeydispatcher
 
-from sosActor import boss_collimate
+from hartmannActor import boss_collimate
 
 from multiprocessing import Lock, Manager
 
@@ -38,7 +38,7 @@ class Actor(object):
         self.name = name
         self.models = {}
         if not Model.dispatcher:
-            dispatcher = cmdkeydispatcher.CmdKeyVarDispatcher('test_sos')
+            dispatcher = cmdkeydispatcher.CmdKeyVarDispatcher('test_hartmann')
             Model.setDispatcher(dispatcher)
             self.models['boss'] = Model('boss')
 
@@ -52,7 +52,7 @@ class Test_boss_collimate(unittest.TestCase):
     def setUp(self):
         #import pdb
         #pdb.set_trace()
-        actor = Actor('sos')#,productName='sosActor')
+        actor = Actor('hartmann')#,productName='hartmannActor')
         #actor.models['boss'] = Model('boss')
                         
         self.cmd = Cmd()
