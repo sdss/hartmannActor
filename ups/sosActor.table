@@ -1,0 +1,7 @@
+setupRequired(actorcore)
+
+# REMOVE THE BELOW ONCE THE IDL CALLS ARE REMOVED.
+#setupRequired(idlspec2d)
+
+pathPrepend(PATH, ${PRODUCT_DIR}/bin)
+pathPrepend(PYTHONPATH, ${PRODUCT_DIR}/python)

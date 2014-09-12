@@ -1,0 +1,11 @@
+#!/bin/bash
+
+if [ $# == 0 ]; then
+    echo "usage: $0 leftid" >&2
+    exit 1
+fi
+firstId=$1
+
+idl -e "combsmallcollimate,$firstId,spec=['sp1'],/simple" &
+idl -e "combsmallcollimate,$firstId,spec=['sp2'],/simple" &
+wait
