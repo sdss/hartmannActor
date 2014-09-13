@@ -33,7 +33,6 @@ the Hartmann-r exposure by in Y to agree with the Hartmann-l exposure.
 # IDL version by Kyle Dawson, David Schlegel, Matt Olmstead
 # IDL->Python verson by John Parejko
 
-import logging
 import os.path
 import glob
 from multiprocessing import Process, Lock, Manager
@@ -391,6 +390,9 @@ class Hartmann(object):
         self.models = actor.models
         self.cmd = None
         
+        # the sub-frame region on the chip to read out when doing quick-hartmanns.
+        self.subFrame = [850,1400]
+
         # final results go here
         self.result = {'sp1':{'b':0.,'r':0.},'sp2':{'b':0.,'r':0.}}
         # makes this tread-safe
@@ -538,7 +540,7 @@ class Hartmann(object):
         exposureIds = []
         timeLim = 90.0
         for side in 'left','right':
-            window = "window=850,1400" if subFrame else ""
+            window = "window={0},{1}".format(*self.subFrame) if subFrame else ""
             cmdStr = 'exposure arc hartmann=%s itime=4 %s %s'%(side,window,("noflush" if side == "right" else ""))
             ret = self.actor.cmdr.call(actor='boss',forUserCmd=cmd,
                                        cmdStr=cmdStr,timeLim=timeLim)
