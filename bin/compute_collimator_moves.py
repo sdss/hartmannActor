@@ -27,7 +27,7 @@ def main(argv=None):
 
     cmd = TestHelper.Cmd(verbose=True)
     config = ConfigParser.ConfigParser()
-    config.read('../etc/hartmann.cfg')
+    config.read(os.environ['HARTMANNACTOR_DIR']+'/etc/hartmann.cfg')
     m,b = hartmannActor_main.get_collimation_constants(config)
 
     hart = boss_collimate.Hartmann(None, m, b)
