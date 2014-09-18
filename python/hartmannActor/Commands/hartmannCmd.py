@@ -66,7 +66,7 @@ class hartmannCmd(object):
         
         cmd.diag('text="running collimate on %s/%s"' % (dir,firstId))
         hartmann = boss_collimate.Hartmann(actorState)
-        hartmann.collimate(expnum1,cmd=msg.cmd)
+        hartmann.collimate(expnum1,cmd=cmd)
         if hartmann.success:
             cmd.finish()
         else:
@@ -80,7 +80,7 @@ class hartmannCmd(object):
         moveMotors = "noCorrect" not in cmd.cmd.keywords
         subFrame = "noSubframe" not in cmd.cmd.keywords
         
-        hartmann = boss_collimate.Hartmann()
+        hartmann = myGlobals.hartmann.reinit()
         hartmann.doHartmann(msg.cmd,moveMotors=moveMotors,subFrame=subFrame)
         if hartmann.success:
             cmd.finish()

@@ -9,6 +9,18 @@ from twisted.internet import reactor
 import opscore.actor.model
 import actorcore.Actor
 
+from hartmannActor import boss_collimate, myGlobals
+
+def get_collimation_constants(config):
+    """Get the collimation constants from the config file."""
+    m = {}
+    b = {}
+    for x in config.options('m'):
+        m[x] = config.getfloat('m',x)
+    for x in config.options('b'):
+        b[x] = config.getfloat('b',x)
+    return m,b
+
 class Hartmann(actorcore.Actor.Actor):
     def __init__(self, name, productName=None, configFile=None, debugLevel=10):
         actorcore.Actor.Actor.__init__(self, name, productName=productName, configFile=configFile)
@@ -22,7 +34,8 @@ class Hartmann(actorcore.Actor.Actor):
         for actor in 'boss',:
             self.models[actor] = opscore.actor.model.Model(actor)
 
-        m,b = self.get_collimation_constants()
+        m,b = get_collimation_constants(self.config)
+        myGlobals.hartmann = boss_collimate.Hartmann(self.actor, m, b)
 
         #
         # Finally start the reactor
@@ -42,15 +55,6 @@ class Hartmann(actorcore.Actor.Actor):
         #
         self.periodicStatus()
 
-    def get_collimation_constants(self):
-        """Get the collimation constants from the config file."""
-        m = {}
-        b = {}
-        for x in self.config.options('m'):
-            m[x] = self.config.getfloat('m',x)
-        for x in self.config.options('b'):
-            b[x] = self.config.getfloat('b',x)
-        return m,b
 #
 # To work
 #

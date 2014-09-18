@@ -1,0 +1,12 @@
+[testNotHartmann]
+
+[test_take_hartmanns]
+boss exposure arc hartmann=left itime=4 window=850,1400
+boss exposure arc hartmann=right itime=4 window=850,1400 noflush
+
+[test_take_hartmanns_fails_left]
+boss exposure arc hartmann=left itime=4 window=850,1400
+
+[test_take_hartmanns_fails_right]
+boss exposure arc hartmann=left itime=4 window=850,1400
+boss exposure arc hartmann=right itime=4 window=850,1400 noflush

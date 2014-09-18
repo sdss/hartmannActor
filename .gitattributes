@@ -6,6 +6,9 @@ python/hartmannActor/__init__.py -text
 python/hartmannActor/boss_collimate.py -text
 python/hartmannActor/hartmannActor_main.py -text
 /setup.py -text
+test_hartmannActor/cmd_calls/TestHartmann.txt -text
+test_hartmannActor/cmd_calls/TestOneCam.txt -text
+test_hartmannActor/hartmannTester.py -text
 test_hartmannActor/profile_hartmann.py -text
 test_hartmannActor/test_boss_collimate.py -text
 ups/hartmannActor.table -text
