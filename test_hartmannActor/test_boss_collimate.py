@@ -20,6 +20,11 @@ def get_expnum(filename):
     """Return the exposure number from this filename."""
     return int(filename.split('-')[-1].split('.')[0])
 
+# Note: to take sample test exposures, you can't use flavor "science",
+# because that closes the screen, unless you alsof specify "hartmann=left/right"
+# It's best to take these as "boss exposure arc"
+data_dir = 'data/'
+
 NeOff1 = 'sdR-r2-00169558.fit.gz'
 NeOff2 = 'sdR-r2-00169559.fit.gz'
 HgCdOff1 = 'sdR-r2-00169560.fit.gz'
@@ -45,30 +50,18 @@ notFocused1 = 'sdR-r2-00169546.fit.gz'
 notFocused2 = 'sdR-r2-00169547.fit.gz'
 
 
-@unittest.skip('these all work!')
-class TestOneCam(hartmannTester.HartmannCallsTester, unittest.TestCase):
+@unittest.skip("Remove this skip once we're happy with TestHartmann")
+class TestOneCam(hartmannTester.HartmannTester, unittest.TestCase):
     def setUp(self):
         super(TestOneCam,self).setUp()
-        self.oneCam = boss_collimate.OneCam(self.cmd, 'sp1', self.actor, None, None)
-
-        # Note: to take sample test exposures, you can't use flavor "science",
-        # because that closes the screen, unless you alsof specify "hartmann=left/right"
-        # It's best to take these as "boss exposure arc"
-        self.data_dir = 'data/'
-        
-
-    def test_move_motors(self):
-        self.oneCam.move_motors(10)
-        self._check_cmd(1,0,0,0,False)
-    def test_move_motors_fails(self):
-        self.cmd.failOn = 'boss moveColl spec=sp1 piston=20'
-        with self.assertRaises(boss_collimate.HartError) as cm:
-            self.oneCam.move_motors(20)
-        self.assertIn('Failed to move collimator pistons', cm.exception.message)
-        self._check_cmd(1,0,0,0,False)
+        self.oneCam = boss_collimate.OneCam(self.cmd, None, None, 292., 0, 0, '')
+        self.spec = 'sp2'
+        self.cam = 'r2'
+        self.oneCam.spec = self.spec
+        self.oneCam.cam = self.cam
 
     def _check_Hartmann_header(self, filename, expect):
-        header = pyfits.getheader(self.data_dir + filename)
+        header = pyfits.getheader(data_dir + filename)
         result = self.oneCam.check_Hartmann_header(header)
         self.assertEqual(result, expect)
     def test_check_Hartmann_header_left(self):
@@ -83,28 +76,28 @@ class TestOneCam(hartmannTester.HartmannCallsTester, unittest.TestCase):
         self.assertEqual(result, isBad)
         self._check_cmd(0,0,nWarn,0,False)
     def test_bad_header_ok(self):
-        header = pyfits.getheader(self.data_dir + focused1)
+        header = pyfits.getheader(data_dir + focused1)
         self._bad_header(header, False, 0)
     def test_bad_header_noNe(self):
-        header = pyfits.getheader(self.data_dir + NeOff1)
+        header = pyfits.getheader(data_dir + NeOff1)
         self._bad_header(header, True, 1)
     def test_bad_header_noHgcd(self):
-        header = pyfits.getheader(self.data_dir + HgCdOff1)
+        header = pyfits.getheader(data_dir + HgCdOff1)
         self._bad_header(header, True, 1)
     def test_bad_header_noLamps(self):
-        header = pyfits.getheader(self.data_dir + bothOff1)
+        header = pyfits.getheader(data_dir + bothOff1)
         self._bad_header(header, True, 2)
     def test_bad_header_noFFS(self):
-        header = pyfits.getheader(self.data_dir + noFFS)
+        header = pyfits.getheader(data_dir + noFFS)
         self._bad_header(header, True, 1)
     @unittest.skip("Not sure what I had this file for?")
     def test_bad_header_not_Hartmann(self):
-        header = pyfits.getheader(self.data_dir + notHartmann)
+        header = pyfits.getheader(data_dir + notHartmann)
         self._bad_header(header, True, 1)
 
     def _load_data(self, expnum1, expnum2):
         self.oneCam.cam = 'r2'
-        self.oneCam._load_data(self.data_dir, expnum1, expnum2)
+        self.oneCam._load_data(data_dir, expnum1, expnum2)
         self.assertIsInstance(self.oneCam.bigimg1, np.ndarray)
         self.assertIsInstance(self.oneCam.bigimg2, np.ndarray)
         msg = "Files should have different content."
@@ -124,7 +117,7 @@ class TestOneCam(hartmannTester.HartmannCallsTester, unittest.TestCase):
     def _load_data_not_ok(self, expnum1, expnum2, nWarn, errMsg):
         self.oneCam.cam = 'r2'
         with self.assertRaises(boss_collimate.HartError) as cm:
-            self.oneCam._load_data(self.data_dir, expnum1, expnum2)
+            self.oneCam._load_data(data_dir, expnum1, expnum2)
         self.assertIn(errMsg, cm.exception.message)
         self._check_cmd(0,0,nWarn,0,False)
     def test_load_data_NeOff(self):
@@ -152,7 +145,7 @@ class TestOneCam(hartmannTester.HartmannCallsTester, unittest.TestCase):
         expnum2 = get_expnum(maskOut2)
         self._load_data_not_ok(expnum1, expnum2, 0, 'FITS headers do not indicate these are Hartmann exposures.')
 
-
+# @unittest.skip("these don't work!")
 class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
     def setUp(self):
         super(TestHartmann,self).setUp()
@@ -164,18 +157,15 @@ class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
         self.hart = boss_collimate.Hartmann(self.actor, m, b)
         self.hart.cmd = self.cmd
         
-        self.ffsOpen = ''
-        self.ffsSomeClosed = ''
-        
-        self.focused1 = 'sdR-r2-00165006.fit.gz'
-        self.focused2 = 'sdR-r2-00165007.fit.gz'
-        
-        self.notFocused1 = 'sdR-r2-00169546.fit.gz'
-        self.notFocused2 = 'sdR-r2-00169547.fit.gz'
-        
-        self.inFocusMsg = 'i'*2*4+'ii'*2
-        self.outFocusMsg = 'wi'+'i'*2*3+'ii'*2
-        self.noFFSMsg = 'ee'*2
+    def test_move_motors(self):
+        self.hart.move_motors('sp2', 10)
+        self._check_cmd(1,0,0,0,False)
+    def test_move_motors_fails(self):
+        self.cmd.failOn = 'boss moveColl spec=sp2 piston=20'
+        with self.assertRaises(boss_collimate.HartError) as cm:
+            self.hart.move_motors('sp2', 20)
+        self.assertIn('Failed to move collimator pistons', cm.exception.message)
+        self._check_cmd(1,0,0,0,False)
 
     def _take_hartmanns(self,nCalls,nInfo,nWarn,nErr, expect):
         result = self.hart.take_hartmanns(True)
@@ -190,86 +180,66 @@ class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
         self.cmd.failOn = "boss exposure arc hartmann=right itime=4 window=850,1400 noflush"
         self._take_hartmanns(2,1,0,1, None)
 
-    def testNotHartmann(self):
-        """Test with a file that isn't a Hartmann image."""
-        exp1 = get_expnum(notHartmann)
-        self.hart.collimate(exp1,cmd=self.cmd)
-        self.assertFalse(self.hart.success)
-        self._check_cmd(0,0,0,4,False)
-
     def _lamps_tester(self, nInfo, nWarn, nErr, filename):
         """To help with lamp-off tests."""
         exp1 = get_expnum(filename)
-        self.hart.collimate(exp1,cmd=self.cmd)
+        self.hart.collimate(exp1,indir=data_dir,cmd=self.cmd)
         self.assertFalse(self.hart.success)
-        self._cmd_calls(0,0,0,4,False)
+        # NOTE: No good way to test the message levels due to multiprocessing
+        # self._check_cmd(0,nInfo,nWarn,nErr,False)
     def testNoNe(self):
         """Test with a file that had all Ne lamps off."""
-        self._lamps_tester(NeOff1)
+        self._lamps_tester(0,4,5,NeOff1)
     def testNoHgCd(self):
         """Test with a file that had all HgCd lamps off."""
-        self._lamps_tester(HgCdOff1)
+        self._lamps_tester(0,4,5,HgCdOff1)
     def testNoArcs(self):
         """Test with a file that had both arc lamps off."""
-        self._lamps_tester(bothOff1)
-    
+        self._lamps_tester(0,8,5,bothOff1)
+
     def _mask_tester(self,filename):
         """To help with hartmann position testing."""
         exp1 = get_expnum(filename)
-        self.hart.collimate(exp1,cmd=self.cmd)
+        self.hart.collimate(exp1,indir=data_dir,cmd=self.cmd)
         self.assertFalse(self.hart.success)
-        self._cmd_calls(0,0,0,4,False)
+        # NOTE: No good way to test the message levels due to multiprocessing
+        # self._check_cmd(0,0,0,4,False)
     def testBothLeft(self):
         """Test with a file where both members of the pair had Left Hartmanns."""
-        self._mask_tester(self.bothLeft1)
+        self._mask_tester(bothLeft1)
     def testBothRight(self):
         """Test with a file where both members of the pair had Right Hartmanns."""
-        self._mask_tester(self.bothRight1)
+        self._mask_tester(bothRight1)
     def testBothOut(self):
         """Test with a file where both members of the pair had Hartmanns out."""
-        self._mask_tester(self.maskOut1)
-    
-    @unittest.skip('need test files!')
-    def testNoFFS(self):
-        """Test with a file that had all FFS open."""
-        exp1 = get_expnum(self.ffsOpen_file)
-        self.hart.collimate(exp1,cmd=self.cmd)
-        self.assertFalse(self.hart.success)
-        self._cmd_calls(0,0,0,4,False)
-    
-    @unittest.skip('need test files!')
+        self._mask_tester(maskOut1)
+        
     def testNoLight(self):
         """Test with a file that has no signal."""
         exp1 = get_expnum(self.noLight_file)
         self.hart.collimate(exp1,cmd=self.cmd)
-        self.assertEqual(self.cmd.messages,self.noLightMsg)
-    
-    @unittest.skip('working on it!')
+        self.assertFalse(self.hart.success)
+
     def testHartmannOneFile(self):
-        """Test collimating left expnum, the subsequent expnum is right."""
-        exp1 = get_expnum(self.notFocused1)
-        self.hart.collimate(exp1,cmd=self.cmd)
-        self.assertEqual(self.cmd.messages,self.OutFocusMsg)
+        """Test collimating given left expnum, the subsequent expnum is right."""
+        exp1 = get_expnum(notFocused1)
+        self.hart.collimate(exp1,indir=data_dir,cmd=self.cmd)
         self.assertTrue(self.hart.success)
         # TBD: get correct result from combsmallcollimate.pro
     
-    @unittest.skip('working on it!')
     def testHartmannTwoFiles(self):
         """Test collimating with files in correct order (left->right)."""
-        exp1 = get_expnum(self.focused1)
-        exp2 = get_expnum(self.focused2)
-        self.hart.collimate(exp1,exp2,plot=True,cmd=self.cmd)
-        self.assertEqual(self.cmd.messages,self.inFocusMsg)
+        exp1 = get_expnum(focused1)
+        exp2 = get_expnum(focused2)
+        self.hart.collimate(exp1,exp2,indir=data_dir,cmd=self.cmd)
         self.assertTrue(self.hart.success)
         # TBD: get correct result from combsmallcollimate.pro
-        
-    @unittest.skip('working on it!')
+    
     def testReverseOrder(self):
         """Test collimating with files in reversed order (right->left)."""
-        exp1 = get_expnum(self.focused1)
-        exp2 = get_expnum(self.focused2)
-        self.hart.collimate(exp2,exp1,plot=True,cmd=self.cmd) # note reversed order!
-        self.assertEqual(self.cmd.messages,self.inFocusMsg)
+        exp1 = get_expnum(focused1)
+        exp2 = get_expnum(focused2)
+        self.hart.collimate(exp2,exp1,indir=data_dir,cmd=self.cmd) # note reversed order!
         self.assertTrue(self.hart.success)
         # TBD: get correct result from combsmallcollimate.pro
         

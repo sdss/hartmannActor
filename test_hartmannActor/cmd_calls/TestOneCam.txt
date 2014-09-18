@@ -1,5 +1,0 @@
-[test_move_motors]
-boss moveColl spec=sp1 piston=10
-
-[test_move_motors_fails]
-boss moveColl spec=sp1 piston=20

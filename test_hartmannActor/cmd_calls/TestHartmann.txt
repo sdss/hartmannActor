@@ -1,3 +1,9 @@
+[test_move_motors]
+boss moveColl spec=sp2 piston=10
+
+[test_move_motors_fails]
+boss moveColl spec=sp2 piston=20
+
 [testNotHartmann]
 
 [test_take_hartmanns]

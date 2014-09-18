@@ -34,9 +34,7 @@ the Hartmann-r exposure by in Y to agree with the Hartmann-l exposure.
 # IDL->Python verson by John Parejko
 
 import os.path
-from multiprocessing import Pool, Lock, Manager
-from multiprocessing.dummy import Pool as ThreadPool
-
+from multiprocessing import Pool
 
 import pyfits
 import numpy as np
@@ -49,28 +47,39 @@ class HartError(Exception):
 #...
 
 class OneCamResult(object):
-    def __init__(self,spec):
-        # final results go here
-        self.result = {'sp1':{'b':0.,'r':0.},'sp2':{'b':0.,'r':0.}}
+    """
+    Store the results of a oneCam call().
+    Makes multiprocessing much easier.
+    """
+    def __init__(self, cam, success, xshift, ibest, xoffset, piston):
+        self.cam = cam
+        self.success = success
+        self.xshift = xshift
+        self.ibest = ibest
+        self.xoffset = xoffset
+        self.piston = piston
 
+    def __str__(self):
+        return '%s:%s : %s, %s'%(self.cam, self.success, self.xoffset, self.piston)
 
 class OneCam(object):
     """Collimate one camera."""
-    def __init__(self, cmd, spec, actor, m, b,
+    def __init__(self, cmd, m, b, bsteps,
+                 expnum1, expnum2, indir,
                  moveMotors=False, test=False):
         self.cmd = cmd
-        self.spec = spec
         self.test = test
-        self.actor = actor
         self.moveMotors = moveMotors
         
+        self.indir = indir
+        self.expnum1 = expnum1
+        self.expnum2 = expnum2
+
         # A pattern for the filenames that we can format for the full name.
         self.basename = 'sdR-%s-%08d.fit.gz'
 
         # allowable focus tolerance (pixels): if offset is less than this, we're in focus.
         self.focustol = 0.20
-        # bad residual on blue ring
-        self.badres = 6
         
         # maximum pixel shift to search in X
         self.maxshift = 2
@@ -88,7 +97,7 @@ class OneCam(object):
         pixscale = -15. # in microns
         rfudge = -9150*1.12*pixscale/24.
         # steps per degree for the blue ring.
-        self.bsteps = 292.
+        self.bsteps = bsteps
         self.fudge = {'b1':-31.87*self.bsteps*pixscale/24.,
                       'b2':-28.95*self.bsteps*pixscale/24.,
                       'r1':rfudge,'r2':rfudge}
@@ -108,34 +117,33 @@ class OneCam(object):
                                 [np.s_[0:2055,2048:4095],np.s_[56:2111,2176:4223]]],
                            'r':[[np.s_[0:2063,0:2056],np.s_[48:2111,119:2175]],
                                 [np.s_[0:2063,2057:4113],np.s_[48:2111,2176:4232]]],}
-        # to store the per-camera values for plotting.
-        self.xshift = {}
-        self.ibest = {}
-        self.xoffset = {}
+        
+        # Did everything work?
+        self.success = True
+        # to store the results of the calculations.
+        self.xshift = None
+        self.ibest = None
+        self.xoffset = None
+        self.piston = None
     #...
     
-    def __call__(self, cam, indir, expnum1, expnum2):
+    def __call__(self, cam):
         """
         Compute the collimation values for one camera.
         
         See parameters for self.collimate().
         """
+        if cam not in ['r1','r2','b1','b2']:
+            raise HartError("I do not recognize camera %s"%self.cam)
         self.cam = cam
+        self.spec = 'sp'+cam[1]
 
         try:
-            print 'load data'
-            self._load_data(indir,expnum1,expnum2)
-            print 'do gain'
+            self._load_data(self.indir,self.expnum1,self.expnum2)
             self._do_gain_bias()
-            print 'check images'
             self._check_images()
-            print 'find shift'
             self._find_shift()
-            print 'find collimator'
-            piston = self._find_collimator_motion()
-            print 'move motors'
-            if self.moveMotors:
-                self.move_motors(piston)
+            self._find_collimator_motion()
         # Have to handle exceptions here, because we're called via multiprocess.
         except HartError as e:
             self.cmd.error('text="%s"'%e)
@@ -144,19 +152,7 @@ class OneCam(object):
             self.cmd.error('text="!!!! Unknown error when processing Hartmanns! !!!!"')
             self.cmd.error('text="%s"'%e)
             self.success = False
-        self.success = True
-        return self.success, 
-    
-    def move_motors(self,piston):
-        """Apply a collimator piston move to spectrograph spec."""
-        if piston == 0:
-            self.cmd.respond('text="no recommended piston change for %s"' % (self.spec))
-        timeLim = 30.0
-        cmdVar = self.actor.cmdr.call(actor='boss', forUserCmd=self.cmd,
-                                      cmdStr="moveColl spec=%s piston=%s" % (self.spec, piston),
-                                      timeLim=timeLim)
-        if cmdVar.didFail:
-            raise HartError('Failed to move collimator pistons.')
+        return OneCamResult(cam, self.success, self.xshift, self.ibest, self.xoffset, self.piston)
     
     def check_Hartmann_header(self,header):
         """
@@ -259,11 +255,9 @@ class OneCam(object):
         bias2 = [ np.median(bigimg2[self.bias_slice[0]]), np.median(bigimg2[self.bias_slice[1]]) ]
         # apply bias and gain to the images
         # gain_slice is a dict with keys 'r' and 'b
-        try:
-            gain = self.cam_gains[self.cam]
-            gslice = self.gain_slice[self.cam[0]]
-        except KeyError:
-            raise HartError("I do not recognize camera %s"%self.cam)
+        gain = self.cam_gains[self.cam]
+        gslice = self.gain_slice[self.cam[0]]
+
         # Only apply gain to quadrants 0 and 1, since we aren't using quadrants 2 and 3.
         # NOTE: we are overwriting the original array, including the original bias region.
         # This is ok, because all the processing is done on a subregion of this,
@@ -279,6 +273,8 @@ class OneCam(object):
         img1 = self.bigimg1[self.region]
         # find the variance near bright lines
         # ddof=1 for consistency with IDL's variance() which has denominator (N-1)
+
+        # NOTE: TBD: need to compare this with any new choices for subFrame.
         if 'b' in self.cam:
             var = np.var(img1[300:450,:],ddof=1)
         else:
@@ -312,7 +308,7 @@ class OneCam(object):
         dx = 0.05
         nshift = int(np.ceil(2*self.maxshift/dx))
         xshift = -self.maxshift + dx * np.arange(nshift,dtype='f8')
-        self.xshift[self.cam] = xshift # save for plotting
+        self.xshift = xshift # save for plotting
         
         def calc_shift(xs,img1,img2,mask):
             shifted = interpolation.shift(img2,[xs,0],order=order,prefilter=False)
@@ -326,12 +322,12 @@ class OneCam(object):
             #self.coeff[i] = (filtered1*interpolation.shift(filtered2,[xshift[i],0],order=order,prefilter=False)*mask).sum()
             self.coeff[i] = calc_shift(xshift[i],filtered1,filtered2,mask)
         ibest = self.coeff.argmax()
-        self.ibest[self.cam] = ibest # save for plotting
-        self.xoffset[self.cam] = xshift[ibest]
+        self.ibest = ibest # save for plotting
+        self.xoffset = xshift[ibest]
         # If the sequence is actually R-L, instead of L-R,
         # then the offset acctually goes the other way.
         if self.hartpos1 == 'right':
-            self.xoffset[self.cam] = -self.xoffset[self.cam]
+            self.xoffset = -self.xoffset
     #...
 
     def _find_collimator_motion(self):
@@ -351,7 +347,7 @@ class OneCam(object):
         b = self.b[self.cam]
         if self.test:
             b = 0.
-        offset = self.xoffset[self.cam]*m + b
+        offset = self.xoffset*m + b
 
         if offset < self.focustol:
             focus = 'In Focus'
@@ -361,31 +357,14 @@ class OneCam(object):
             msglvl = self.cmd.warn
         msglvl('%sMeanOffset=%.2f,"%s"'%(self.cam,offset,focus))
 
-        val = int(offset*self.fudge[self.cam])
-        self.result[self.spec][self.cam[0]] = val
+        piston = int(offset*self.fudge[self.cam])
         if 'r' in self.cam:
-            self.cmd.inform('%sPistonMove=%d'%(self.cam,val))
+            self.cmd.inform('%sPistonMove=%d'%(self.cam,piston))
         else:
-            self.cmd.inform('%sRingMove=%.1f'%(self.cam,-val/self.bsteps))
-        return val
+            self.cmd.inform('%sRingMove=%.1f'%(self.cam,-piston/self.bsteps))
+        self.piston = piston
     #...
 
-    def _mean_moves(self):
-        """Compute the mean movement and residuals for this spectrograph,
-        after r&b moves have been determined."""
-        avg = sum(self.result[self.spec].values())/2.
-        bres = -(self.result[self.spec]['b'] - avg)/self.bsteps
-        rres = self.result[self.spec]['r'] - avg
-
-        if abs(bres) < self.badres:
-            resid = '"OK"'
-            msglvl = self.cmd.inform
-        else:
-            resid = '"Bad angle: move blue ring %.1f degrees then rerun gotoField with Hartmanns checked."'%(bres*2)
-            msglvl = self.cmd.warn
-        msglvl('%sResiduals=%d,%.1f,%s'%(self.spec,rres,bres,resid))
-        self.cmd.inform('%sAverageMove=%d'%(self.spec,avg))
-    #...
 #...
 
 class Hartmann(object):
@@ -394,21 +373,24 @@ class Hartmann(object):
     """
     def __init__(self, actor, m, b):
         self.actor = actor
-        self.models = actor.models
+        self.models = None # so we can use it at the commandline, outside STUI/tron.
+        if actor is not None:
+            self.models = actor.models
         self.cmd = None
 
         self.m = m
         self.b = b
+
+        # bad residual on blue ring
+        self.badres = 6
+        # steps per degree for the blue ring.
+        self.bsteps = 292.
+
         
         # the sub-frame region on the chip to read out when doing quick-hartmanns.
         self.subFrame = [850,1400]
 
-        # makes this tread-safe
-        self._success = Manager().Value(bool,True)
-        self.lock = Lock()
-
         self.data_root_dir = '/data/spectro'
-
         self.filebase = 'Collimate-%5d-%s-%08d'
         self.plotfilebase = 'Collimate-%5d_%08d-%08d.png'
 
@@ -418,16 +400,7 @@ class Hartmann(object):
     def reinit(self):
         # final results go here
         self.result = {'sp1':{'b':0.,'r':0.},'sp2':{'b':0.,'r':0.}}
-
-    @property
-    def success(self):
-        """Success or failure of this collimation attempt."""
-        with self.lock:
-            return self._success.value
-    @success.setter
-    def success(self,value):
-        with self.lock:
-            self._success.value = value
+        self.success = True
 
     def doHartmann(self,cmd,moveMotors=False,subFrame=True,plot=False):
         """
@@ -448,12 +421,34 @@ class Hartmann(object):
         exposureId = self.take_hartmanns(subFrame)
         # Perform the collimation calculations
         self.collimate(exposureId[0],exposureId[1],moveMotors=moveMotors,plot=plot)
-        if moveMotors:
-            self.move_motors()
+        if self.success and moveMotors:
+            for spec,piston in self.result.items():
+                self.move_motors(spec,piston)
     #...
-    
-    def collimate(self,expnum1,expnum2=None,indir=None,
-                  spec=['sp1','sp2'],docams1=['b1','r1'],docams2=['b2','r2'],
+
+    def bundle_result(self, cams, results):
+        """Return dict of spec:{cam:piston}."""
+        for cam, result in zip(cams, results):
+            self.result['sp'+cam[1]][cam[0]] = result.piston
+
+    def _collimate(self, expnum1, expnum2, indir, moveMotors, docams):
+        """The guts of the collimation, to be wrapped in a try:except block."""
+        # pool = ThreadPool(len(docams))
+        pool = Pool(len(docams))
+        oneCam = OneCam(self.cmd, self.m, self.b, self.bsteps, expnum1, expnum2, indir, moveMotors)
+        results = pool.map(oneCam, docams)
+        pool.close()
+        pool.join()
+
+        success = dict([(x.cam,x.success) for x in results])
+        if not all(success.values()):
+            failures = [x for x in success if not success[x]]
+            raise HartError('Collimation calculation failed for %s.'%','.join(failures))
+
+        self.bundle_result(docams, results)
+
+    def collimate(self, expnum1, expnum2=None, indir=None, mjd=50000,
+                  specs=['sp1','sp2'],docams1=['b1','r1'],docams2=['b2','r2'],
                   test=False,plot=False,cmd=None,moveMotors=False):
         """
         Compute the spectrograph collimation focus from Hartmann mask exposures.
@@ -475,75 +470,32 @@ class Hartmann(object):
         if expnum2 is None:
             expnum2 = expnum1+1
         
-        # TBD jkp: rework this to not be recursive: it's confusing, not necessary
-        # and probably makes the multiprocessing step worse.
+        if indir is None:
+            indir = os.path.join(self.data_root_dir,str(mjd))
 
-        # # recursive call for each spectrograph
-        # if not isinstance(spec,str):
-        #     specProcesses = []
-        #     for sp in spec:
-        #         args = (expnum1,)
-        #         # non-multiprocess call, for testing purposes
-        #         #self.collimate(expnum1,expnum2=expnum2,indir=indir,spec=sp,
-        #         #               docams1=docams1,docams2=docams2,test=test,plot=plot)
-
-        #         # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        #         # multiprocessing probably messes up my use of self.spec and self.cam
-        #         # later on... BE CAREFUL!
-        #         # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        #         kwargs = {'expnum2':expnum2,'indir':indir,'spec':sp,
-        #                   'docams1':docams1,'docams2':docams2,'test':test,'plot':plot}
-        #         p = Process(target=self.collimate,args=args,kwargs=kwargs)
-        #         p.start()
-        #         specProcesses.append(p)
-        #     for p in specProcesses: p.join()
+        # # to handle the various string/list/tuple possibilities for each argument
+        # docams = []
+        # if spec == 'sp1':
+        #     docams.extend([docams1,] if isinstance(docams1,str) else docams1)
+        # elif spec == 'sp2':
+        #     docams.extend([docams2,] if isinstance(docams2,str) else docams2)
+        # else:
+        #     self.success = False
+        #     self.cmd.error('text="I do not understand spectrograph: %s"'%spec)
         #     return
 
-        if indir is None:
-            indir = os.path.join(self.data_root_dir,'*')
-
-        # to handle the various string/list/tuple possibilities for each argument
-        docams = []
-        if spec == 'sp1':
-            docams.extend([docams1,] if isinstance(docams1,str) else docams1)
-        elif spec == 'sp2':
-            docams.extend([docams2,] if isinstance(docams2,str) else docams2)
-        else:
-            self.success = False
-            self.cmd.error('text="I do not understand spectrograph: %s"'%spec)
-            return
-
+        docams = ['r1','r2','b1','b2']
         try:
-            camProcesses = []
-            oneCams = []
-            pool = ThreadPool(4)
-            oneCam = OneCam(self.cmd, spec, self.actor, self.m, self.b)
-            oneCams.append(pool.map(oneCam,docams, ))
-            for cam in docams:
-                oneCams.append(OneCam(self.cmd, spec, self.actor, self.m, self.b))
-                # non-multiprocessed version for debugging:
-                oneCam(cam,indir,expnum1,expnum2,moveMotors)
-                
-                args = (cam,indir,expnum1,expnum2,moveMotors)
-                p = Process(target = oneCams[-1],args=args)
-                p.start()
-                camProcesses.append(p)
-            for p in camProcesses: p.join()
-            success = dict([(x.cam,x.success) for x in oneCams])
-            if not all(success.values()):
-                failures = [x for x in success if success[x]]
-                raise HartError('Collimation calculation failed for %s.'%','.join(failures))
-            # TBD: Probably won't work because of multiprocessing weirdness
-            #if plot:
-            #    self._make_plot(expnum1,expnum2)
-            #if len(docams) > 1:
-            #    oneCam._mean_moves()
+            self._collimate(expnum1, expnum2, indir, moveMotors, docams)
         except Exception as e:
             self.success = False
             self.cmd.error('text="Collimation calculation failed! %s"'%e)
             return
         else:
-            return
+            for spec in specs:
+                self._mean_moves(spec)
+            if plot:
+               self._make_plot(expnum1,expnum2)
     #...
     
     def take_hartmanns(self,subFrame):
@@ -570,6 +522,35 @@ class Hartmann(object):
             exposureIds.append(exposureId)
             self.cmd.inform('text="got hartmann %s exposure %d"' % (side, exposureId))
         return exposureIds
+
+    def _mean_moves(self, spec):
+        """Compute the mean movement and residuals for this spectrograph,
+        after r&b moves have been determined."""
+
+        avg = sum(self.result[spec].values())/2.
+        bres = -(self.result[spec]['b'] - avg)/self.bsteps
+        rres = self.result[spec]['r'] - avg
+
+        if abs(bres) < self.badres:
+            resid = '"OK"'
+            msglvl = self.cmd.inform
+        else:
+            resid = '"Bad angle: move blue ring %.1f degrees then rerun gotoField with Hartmanns checked."'%(bres*2)
+            msglvl = self.cmd.warn
+            self.success = False
+        msglvl('%sResiduals=%d,%.1f,%s'%(spec,rres,bres,resid))
+        self.cmd.inform('%sAverageMove=%d'%(spec,avg))
+
+    def move_motors(self, spec, piston):
+        """Apply a collimator piston move to spectrograph spec."""
+        if piston == 0:
+            self.cmd.respond('text="no recommended piston change for %s"' % (spec))
+        timeLim = 30.0
+        cmdVar = self.actor.cmdr.call(actor='boss', forUserCmd=self.cmd,
+                                      cmdStr="moveColl spec=%s piston=%s" % (spec, piston),
+                                      timeLim=timeLim)
+        if cmdVar.didFail:
+            raise HartError('Failed to move collimator pistons.')
     
     def _make_plot(self,expnum1,expnum2):
         """Save a plot of the pixel vs. correlation for this collimation."""
