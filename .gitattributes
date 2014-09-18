@@ -6,6 +6,7 @@ python/hartmannActor/Commands/hartmannCmd.py -text
 python/hartmannActor/__init__.py -text
 python/hartmannActor/boss_collimate.py -text
 python/hartmannActor/hartmannActor_main.py -text
+python/hartmannActor/myGlobals.py -text
 /setup.py -text
 test_hartmannActor/cmd_calls/TestHartmann.txt -text
 test_hartmannActor/hartmannTester.py -text
