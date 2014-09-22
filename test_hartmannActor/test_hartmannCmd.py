@@ -36,8 +36,8 @@ class HartmannCmdTester(hartmannTester.HartmannTester):
         self.actor.models = self.actorState.models
         config = ConfigParser.ConfigParser()
         config.read('../etc/hartmann.cfg')
-        m,b = hartmannActor_main.get_collimation_constants(config)
-        self.hart = boss_collimate.Hartmann(self.actor, m, b)
+        m,b,constants = hartmannActor_main.get_collimation_constants(config)
+        self.hart = boss_collimate.Hartmann(self.actor, m, b, constants)
         self.hart.cmd = self.cmd
 
 

@@ -36,10 +36,19 @@ the Hartmann-r exposure by in Y to agree with the Hartmann-l exposure.
 import os.path
 from multiprocessing import Pool
 
-import pyfits
+try:
+    fitsio = True
+    import fitsio
+except ImportError:
+    print "WARNING: fitsio not available. Using pyfits instead."
+    print "If you install the python fitsio package, the code will run in about half the time."
+    import pyfits
+    fitsio = False
 import numpy as np
 from scipy.ndimage import interpolation
-#import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 import hartmannActor.myGlobals as myGlobals
 
@@ -58,10 +67,11 @@ class OneCamResult(object):
     Store the results of a oneCam call().
     Makes multiprocessing much easier.
     """
-    def __init__(self, cam, success, xshift, ibest, xoffset, piston):
+    def __init__(self, cam, success, xshift, coeff, ibest, xoffset, piston):
         self.cam = cam
         self.success = success
         self.xshift = xshift
+        self.coeff = coeff
         self.ibest = ibest
         self.xoffset = xoffset
         self.piston = piston
@@ -71,12 +81,9 @@ class OneCamResult(object):
 
 class OneCam(object):
     """Collimate one camera."""
-    def __init__(self, cmd, m, b, bsteps,
-                 expnum1, expnum2, indir,
-                 moveMotors=False, test=False):
+    def __init__(self, cmd, m, b, bsteps, expnum1, expnum2, indir, test=False):
         self.cmd = cmd
         self.test = test
-        self.moveMotors = moveMotors
         
         self.indir = indir
         self.expnum1 = expnum1
@@ -159,7 +166,7 @@ class OneCam(object):
             self.cmd.error('text="!!!! Unknown error when processing Hartmanns! !!!!"')
             self.cmd.error('text="%s"'%e)
             self.success = False
-        return OneCamResult(cam, self.success, self.xshift, self.ibest, self.xoffset, self.piston)
+        return OneCamResult(cam, self.success, self.xshift, self.coeff, self.ibest, self.xoffset, self.piston)
     
     def check_Hartmann_header(self,header):
         """
@@ -169,9 +176,10 @@ class OneCam(object):
         # we have to "get" it (returns None if missing), not just take it as a keyword.
         obscomm = header.get('OBSCOMM')
         hartmann = header.get('HARTMANN')
-        if obscomm == '{focus, hartmann l}' or hartmann == 'Left':
+        # Need strip() incase extra whitespace is stuck on the end.
+        if obscomm == '{focus, hartmann l}' or hartmann.strip() == 'Left':
             return 'left'
-        elif obscomm == '{focus, hartmann r}' or hartmann == 'Right':
+        elif obscomm == '{focus, hartmann r}' or hartmann.strip() == 'Right':
             return 'right'
         else:
             return None
@@ -228,11 +236,17 @@ class OneCam(object):
         # NOTE: we don't process with sdssproc, because the subarrays cause it to fail.
         # Also, because it would restore the dependency on SoS that this class removed!
         try:
-            header1 = pyfits.getheader(filename1,0)
+            if fitsio:
+                header1 = fitsio.read_header(filename1,0)
+            else:
+                header1 = pyfits.getheader(filename1,0)
         except IOError:
             raise HartError("Failure reading file %s"%filename1)
         try:
-            header2 = pyfits.getheader(filename2,0)
+            if fitsio:
+                header2 = fitsio.read_header(filename2,0)
+            else:
+                header2 = pyfits.getheader(filename2,0)
         except IOError:
             raise HartError("Failure reading file %s"%filename2)
 
@@ -247,8 +261,12 @@ class OneCam(object):
             raise HartError("FITS headers indicate both exposures had same Hartmann position: %s"%self.hartpos1)
 
         # upcast the arrays, to make later math work better.
-        self.bigimg1 = np.array(pyfits.getdata(filename1,0),dtype='float64')
-        self.bigimg2 = np.array(pyfits.getdata(filename2,0),dtype='float64')
+        if fitsio:
+            self.bigimg1 = np.array(fitsio.read(filename1,0),dtype='float64')
+            self.bigimg2 = np.array(fitsio.read(filename2,0),dtype='float64')
+        else:
+            self.bigimg1 = np.array(pyfits.getdata(filename1,0),dtype='float64')
+            self.bigimg2 = np.array(pyfits.getdata(filename2,0),dtype='float64')
         self.header1 = header1
         self.header2 = header2
     #...
@@ -378,7 +396,7 @@ class Hartmann(object):
     """
     Call Hartmann.doHartmann to take and reduce a pair of hartmann exposures.
     """
-    def __init__(self, actor, m, b):
+    def __init__(self, actor, m, b, constants):
         """
         Actor can be None, if you don't need to send an actual commands.
         Need m and b, the slope and intercept of the collimator motor relation.
@@ -389,21 +407,20 @@ class Hartmann(object):
         self.models = actor.models if actor is not None else None
             
         self.cmd = None
+        self.mjd = 00000
 
         self.m = m
         self.b = b
-
-        # bad residual on blue ring
-        self.badres = 6
         # steps per degree for the blue ring.
-        self.bsteps = 292.
+        self.bsteps = constants['bsteps']
+        # tolerance for bad residual on blue ring
+        self.badres = constants['badres']
         
         # the sub-frame region on the chip to read out when doing quick-hartmanns.
         self.subFrame = [850,1400]
 
         self.data_root_dir = '/data/spectro'
-        self.filebase = 'Collimate-%5d-%s-%08d'
-        self.plotfilebase = 'Collimate-%5d_%08d-%08d.png'
+        self.plotfilebase = 'Collimate-%05d_%08d-%08d.png'
 
         self.reinit()
     #...
@@ -411,6 +428,7 @@ class Hartmann(object):
     def reinit(self):
         # final results go here
         self.result = {'sp1':{'b':0.,'r':0.},'sp2':{'b':0.,'r':0.}}
+        self.full_result = {'sp1':{'b':None,'r':None},'sp2':{'b':None,'r':None}}
         self.success = True
         # Can't use update_status here, as we don't necessarily have a cmd available.
         myGlobals.hartmannStatus = 'initialized'
@@ -447,9 +465,10 @@ class Hartmann(object):
         update_status(self.cmd, 'idle')
     #...
 
-    def bundle_result(self, cams, results):
+    def _bundle_result(self, cams, results):
         """Return dict of spec:{cam:piston}."""
         for cam, result in zip(cams, results):
+            self.full_result['sp'+cam[1]][cam[0]] = result
             self.result['sp'+cam[1]][cam[0]] = result.piston
 
     def _collimate(self, expnum1, expnum2, indir, moveMotors, docams):
@@ -466,11 +485,11 @@ class Hartmann(object):
             failures = [x for x in success if not success[x]]
             raise HartError('Collimation calculation failed for %s.'%','.join(failures))
 
-        self.bundle_result(docams, results)
+        self._bundle_result(docams, results)
 
     def collimate(self, expnum1, expnum2=None, indir=None, mjd=None,
                   specs=['sp1','sp2'],docams1=['b1','r1'],docams2=['b2','r2'],
-                  test=False,plot=False,cmd=None,moveMotors=False):
+                  test=False, plot=False, cmd=None, moveMotors=False):
         """
         Compute the spectrograph collimation focus from Hartmann mask exposures.
         
@@ -487,16 +506,18 @@ class Hartmann(object):
         moveMotors: If True, actually apply the calculated specMech moves.
         """
 
-        update_status(self.cmd, 'processing')
-
         self.test = test
         if cmd is not None:
             self.cmd = cmd
         if expnum2 is None:
             expnum2 = expnum1+1
-        
+
+        if mjd is not None:
+            self.mjd = mjd
         if indir is None:
-            indir = os.path.join(self.data_root_dir,str(mjd))
+            indir = os.path.join(self.data_root_dir,str(self.mjd))
+
+        update_status(self.cmd, 'processing')
 
         # # to handle the various string/list/tuple possibilities for each argument
         # docams = []
@@ -520,7 +541,7 @@ class Hartmann(object):
             for spec in specs:
                 self._mean_moves(spec)
             if plot:
-               self._make_plot(expnum1,expnum2)
+               self.make_plot(expnum1,expnum2)
     #...
     
     def take_hartmanns(self,subFrame):
@@ -546,6 +567,7 @@ class Hartmann(object):
             # ????
             # exposureId += 1
             exposureIds.append(exposureId)
+            self.mjd = int(self.models["boss"].keyVarDict["BeginExposure"][1])
             self.cmd.inform('text="got hartmann %s exposure %d"' % (side, exposureId))
         return exposureIds
 
@@ -577,35 +599,48 @@ class Hartmann(object):
                                       timeLim=timeLim)
         if cmdVar.didFail:
             raise HartError('Failed to move collimator pistons.')
-    
-    def _make_plot(self, expnum1, expnum2):
-        """Save a plot of the pixel vs. correlation for this collimation."""
-        # !!!!!!!!!!!!
-        # TBD: should make a combined plot for all
+
+    def _get_inset_range(result, ibest, xshift):
+        """Get the xrange of the inset plot."""
+        inset_xlim = 14
+        inset = [ibest-inset_xlim,ibest+inset_xlim]
+        # prevent array overflow when getting the inset plot range.
+        if ibest < inset_xlim:
+            inset[0] = 0
+        if len(xshift)-ibest < inset_xlim:
+            inset[1] = len(xshift)-1
+        return inset
+
+    def _plot_one(self, ax1, ax2, spec):
+        """Plot collimation curves for one spectrograph"""
         ylim1 = [0.4,1.05]
         ylim2 = [0.92,1.01]
-        inset_xlim = 14
-        inset = [self.ibest-inset_xlim,self.ibest+inset_xlim]
-        # prevent array overflow when getting the inset plot range.
-        if self.ibest < inset_xlim:
-            inset[0] = 0
-        if len(self.xshift)-self.ibest < inset_xlim:
-            inset[1] = len(self.xshift)-1
-        mjd = self.header1['MJD']
-        plotfile = self.plotfilebase%(mjd,expnum1,expnum2)
-        title = 'Collimate: MJD=%5i Exp=%08i-%08i'%(mjd,expnum1,expnum2)
-        fig = plt.figure()
-        ax1 = fig.add_axes([0.1,0.1,0.8,0.8])
-        ax2 = fig.add_axes([0.35,0.2,0.3,0.3])
-        for cam in self.xoffset:
-            ax1.plot(self.xshift,self.coeff/max(self.coeff),'*-',color='black',lw=2)
-            ax2.plot(self.xshift[inset[0]:inset[1]],self.coeff[inset[0]:inset[1]]/max(self.coeff),'*-',color='black',lw=2)
-            ax1.plot([self.xoffset[cam],self.xoffset[cam]],ylim1,'--',color='green')
-            ax2.plot([self.xoffset[cam],self.xoffset[cam]],ylim2,'--',color='green')
+
+        result = self.full_result[spec]
+        for cam in result:
+            inset = self._get_inset_range(result[cam].ibest, result[cam].xshift)
+            ax1.plot(result[cam].xshift,result[cam].coeff/max(result[cam].coeff),'*-',color=cam,lw=1.5)
+            ax2.plot(result[cam].xshift[inset[0]:inset[1]],result[cam].coeff[inset[0]:inset[1]]/max(result[cam].coeff),'*-',color=cam,lw=1.5)
+            ax1.plot([result[cam].xoffset,result[cam].xoffset],ylim1,'--',color=cam)
+            ax2.plot([result[cam].xoffset,result[cam].xoffset],ylim2,'--',color=cam)
+            plt.yticks(np.arange(0.90,1.01,.05))
         ax1.set_ylim(ylim1[0],ylim1[1])
-        ax2.axis([self.xshift[inset[0]],self.xshift[inset[1]],ylim2[0],ylim2[1]])
-        ax1.set_title(title)
+        ax2.axis([result[cam].xshift[inset[0]],result[cam].xshift[inset[1]],ylim2[0],ylim2[1]])
         ax1.set_xlabel('pixels')
         ax1.set_ylabel('cross-correlation')
+
+
+    def make_plot(self, expnum1, expnum2):
+        """Save a plot of the pixel vs. correlation for this collimation."""
+        plotfile = self.plotfilebase%(self.mjd, expnum1, expnum2)
+        fig = plt.figure()
+        title = 'Collimate: MJD=%5i Exp=%08i-%08i'%(self.mjd, expnum1, expnum2)
+        ax1 = fig.add_axes([0.1,0.1,0.8,0.8])
+        ax2 = fig.add_axes([0.35,0.2,0.3,0.3])
+
+        for spec in ['sp1','sp2']:
+            self._plot_one(ax1,ax2,spec)
+            ax1.set_title(title)
+
         plt.savefig(plotfile,bbox_inches='tight')
 #...

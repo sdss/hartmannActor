@@ -15,11 +15,14 @@ def get_collimation_constants(config):
     """Get the collimation constants from the config file."""
     m = {}
     b = {}
+    constants = {}
     for x in config.options('m'):
         m[x] = config.getfloat('m',x)
     for x in config.options('b'):
         b[x] = config.getfloat('b',x)
-    return m,b
+    for x in config.options('constants'):
+        constants[x] = config.getfloat('constants',x)
+    return m,b,constants
 
 class Hartmann(actorcore.Actor.Actor):
     def __init__(self, name, productName=None, configFile=None, debugLevel=10):
@@ -34,8 +37,8 @@ class Hartmann(actorcore.Actor.Actor):
         for actor in 'boss',:
             self.models[actor] = opscore.actor.model.Model(actor)
 
-        m,b = get_collimation_constants(self.config)
-        myGlobals.hartmann = boss_collimate.Hartmann(self.actor, m, b)
+        m,b,constants = get_collimation_constants(self.config)
+        myGlobals.hartmann = boss_collimate.Hartmann(self.actor, m, b, constants)
 
         #
         # Finally start the reactor

@@ -23,10 +23,23 @@ hart.cmd = cmd
 # NOTE: this isn't going to tell us anything, because all the work happens
 # inside the 4 processes, and Profile doesn't tell us anything about that.
 # Need to profile a single OneCam call if we really want to learn what's up.
+# print 'Profiling full hartmann __call__()'
+# print '----------------------------------'
+# prof = cProfile.Profile()
+# prof.runcall(hart.collimate,165006,indir='data/',cmd=cmd,moveMotors=False)
+# prof.dump_stats('hartmann.prof')
+# p = pstats.Stats('hartmann.prof')
+# p.strip_dirs()
+# p.sort_stats('time').print_stats(10)
+
+print 'Profiling single oneCam __call__()'
+print '----------------------------------'
+# Now profile a single OneCam call, to see what happens in the guts of it.
 prof = cProfile.Profile()
-prof.runcall(hart.collimate,165006,indir='data/',cmd=cmd,moveMotors=False)
-prof.dump_stats('hartmann.prof')
-p = pstats.Stats('hartmann.prof')
+oneCam = boss_collimate.OneCam(cmd, m, b, 292, 165006, 165007, 'data/')
+prof.runcall(oneCam, 'r2')
+prof.dump_stats('oneCam.prof')
+p = pstats.Stats('oneCam.prof')
 p.strip_dirs()
 p.sort_stats('time').print_stats(10)
 
