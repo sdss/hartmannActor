@@ -33,6 +33,9 @@ def main(argv=None):
     exp1 = args.FILE1
     indir,expnum1 = os.path.split(exp1)
     expnum1 = get_expnum(expnum1)
+    if args.FILE2:
+        indir,expnum2 = os.path.split(args.FILE2)
+        expnum2 = get_expnum(expnum2)
 
     cmd = TestHelper.Cmd(verbose=True)
     config = ConfigParser.ConfigParser()

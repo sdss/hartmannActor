@@ -41,7 +41,7 @@ bothRight2 = 'sdR-r2-00169555.fit.gz'
 
 noFFS = None
 
-notHartmann = 'sdR-r2-00165131.fit.gz'
+notHartmann = None
 
 focused1 = 'sdR-r2-00165006.fit.gz'
 focused2 = 'sdR-r2-00165007.fit.gz'
@@ -50,7 +50,6 @@ notFocused1 = 'sdR-r2-00169546.fit.gz'
 notFocused2 = 'sdR-r2-00169547.fit.gz'
 
 
-@unittest.skip("Remove this skip once we're happy with TestHartmann")
 class TestOneCam(hartmannTester.HartmannTester, unittest.TestCase):
     def setUp(self):
         super(TestOneCam,self).setUp()
@@ -87,10 +86,11 @@ class TestOneCam(hartmannTester.HartmannTester, unittest.TestCase):
     def test_bad_header_noLamps(self):
         header = pyfits.getheader(data_dir + bothOff1)
         self._bad_header(header, True, 2)
+    @unittest.skip('need file for this test!')
     def test_bad_header_noFFS(self):
         header = pyfits.getheader(data_dir + noFFS)
         self._bad_header(header, True, 1)
-    @unittest.skip("Not sure what I had this file for?")
+    @unittest.skip('need file for this test!')
     def test_bad_header_not_Hartmann(self):
         header = pyfits.getheader(data_dir + notHartmann)
         self._bad_header(header, True, 1)
@@ -145,7 +145,6 @@ class TestOneCam(hartmannTester.HartmannTester, unittest.TestCase):
         expnum2 = get_expnum(maskOut2)
         self._load_data_not_ok(expnum1, expnum2, 0, 'FITS headers do not indicate these are Hartmann exposures.')
 
-# @unittest.skip("these don't work!")
 class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
     def setUp(self):
         super(TestHartmann,self).setUp()
@@ -172,13 +171,19 @@ class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
         self.assertEqual(result,expect)
         self._check_cmd(nCalls,nInfo,nWarn,nErr, False)
     def test_take_hartmanns(self):
-        self._take_hartmanns(2,2,0,0, [1234501,1234502])
+        self._take_hartmanns(2,3,0,0, [1234501,1234502])
+
+    def _take_hartmanns_fails(self,nCalls,nInfo,nWarn,nErr, expect):
+        with self.assertRaises(boss_collimate.HartError) as cm:
+            self.hart.take_hartmanns(True)
+        self.assertIn('Failed to take %s hartmann exposure'%expect, cm.exception.message)
+        self._check_cmd(nCalls,nInfo,nWarn,nErr, False)
     def test_take_hartmanns_fails_left(self):
         self.cmd.failOn = "boss exposure arc hartmann=left itime=4 window=850,1400"
-        self._take_hartmanns(1,0,0,1, None)
+        self._take_hartmanns_fails(1,1,0,0, 'left')
     def test_take_hartmanns_fails_right(self):
         self.cmd.failOn = "boss exposure arc hartmann=right itime=4 window=850,1400 noflush"
-        self._take_hartmanns(2,1,0,1, None)
+        self._take_hartmanns_fails(2,2,0,0, 'right')
 
     def _lamps_tester(self, nInfo, nWarn, nErr, filename):
         """To help with lamp-off tests."""
@@ -187,13 +192,13 @@ class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
         self.assertFalse(self.hart.success)
         # NOTE: No good way to test the message levels due to multiprocessing
         # self._check_cmd(0,nInfo,nWarn,nErr,False)
-    def testNoNe(self):
+    def test_no_Ne(self):
         """Test with a file that had all Ne lamps off."""
         self._lamps_tester(0,4,5,NeOff1)
-    def testNoHgCd(self):
+    def test_no_HgCd(self):
         """Test with a file that had all HgCd lamps off."""
         self._lamps_tester(0,4,5,HgCdOff1)
-    def testNoArcs(self):
+    def test_no_Arcs(self):
         """Test with a file that had both arc lamps off."""
         self._lamps_tester(0,8,5,bothOff1)
 
@@ -204,30 +209,31 @@ class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
         self.assertFalse(self.hart.success)
         # NOTE: No good way to test the message levels due to multiprocessing
         # self._check_cmd(0,0,0,4,False)
-    def testBothLeft(self):
+    def test_both_left(self):
         """Test with a file where both members of the pair had Left Hartmanns."""
         self._mask_tester(bothLeft1)
-    def testBothRight(self):
+    def test_both_right(self):
         """Test with a file where both members of the pair had Right Hartmanns."""
         self._mask_tester(bothRight1)
-    def testBothOut(self):
+    def test_both_out(self):
         """Test with a file where both members of the pair had Hartmanns out."""
         self._mask_tester(maskOut1)
         
-    def testNoLight(self):
+    @unittest.skip('need file for this test!')
+    def test_no_light(self):
         """Test with a file that has no signal."""
-        exp1 = get_expnum(self.noLight_file)
+        exp1 = get_expnum(notHartmann)
         self.hart.collimate(exp1,cmd=self.cmd)
         self.assertFalse(self.hart.success)
 
-    def testHartmannOneFile(self):
+    def test_collimate_one_file(self):
         """Test collimating given left expnum, the subsequent expnum is right."""
         exp1 = get_expnum(notFocused1)
         self.hart.collimate(exp1,indir=data_dir,cmd=self.cmd)
         self.assertTrue(self.hart.success)
         # TBD: get correct result from combsmallcollimate.pro
     
-    def testHartmannTwoFiles(self):
+    def test_collimate_two_files(self):
         """Test collimating with files in correct order (left->right)."""
         exp1 = get_expnum(focused1)
         exp2 = get_expnum(focused2)
@@ -235,14 +241,23 @@ class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
         self.assertTrue(self.hart.success)
         # TBD: get correct result from combsmallcollimate.pro
     
-    def testReverseOrder(self):
+    def test_collimate_reverse_order(self):
         """Test collimating with files in reversed order (right->left)."""
         exp1 = get_expnum(focused1)
         exp2 = get_expnum(focused2)
         self.hart.collimate(exp2,exp1,indir=data_dir,cmd=self.cmd) # note reversed order!
         self.assertTrue(self.hart.success)
         # TBD: get correct result from combsmallcollimate.pro
-        
+    
+
+    def test_call_exposure_fails(self):
+        """Test collimating where the first file fails"""
+        self.cmd.failOn = "boss exposure arc hartmann=left itime=4 window=850,1400"
+        self.hart(self.cmd)
+        self.assertFalse(self.hart.success)
+        self._check_cmd(1,0,0,1,False)
+
+
 if __name__ == '__main__':
     verbosity = 2
 

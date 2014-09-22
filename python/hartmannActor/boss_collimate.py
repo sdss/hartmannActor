@@ -39,12 +39,19 @@ from multiprocessing import Pool
 import pyfits
 import numpy as np
 from scipy.ndimage import interpolation
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
+
+import hartmannActor.myGlobals as myGlobals
 
 class HartError(Exception):
     """For known errors processing the Hartmanns"""
     pass
 #...
+
+def update_status(cmd, status):
+    """update the global status value, and output the status keyword."""
+    myGlobals.hartmannStatus = status
+    cmd.inform('status=%s'%status)
 
 class OneCamResult(object):
     """
@@ -372,10 +379,15 @@ class Hartmann(object):
     Call Hartmann.doHartmann to take and reduce a pair of hartmann exposures.
     """
     def __init__(self, actor, m, b):
+        """
+        Actor can be None, if you don't need to send an actual commands.
+        Need m and b, the slope and intercept of the collimator motor relation.
+        """
+
         self.actor = actor
-        self.models = None # so we can use it at the commandline, outside STUI/tron.
-        if actor is not None:
-            self.models = actor.models
+        # so we can use it at the commandline, outside STUI/tron.
+        self.models = actor.models if actor is not None else None
+            
         self.cmd = None
 
         self.m = m
@@ -385,7 +397,6 @@ class Hartmann(object):
         self.badres = 6
         # steps per degree for the blue ring.
         self.bsteps = 292.
-
         
         # the sub-frame region on the chip to read out when doing quick-hartmanns.
         self.subFrame = [850,1400]
@@ -401,8 +412,10 @@ class Hartmann(object):
         # final results go here
         self.result = {'sp1':{'b':0.,'r':0.},'sp2':{'b':0.,'r':0.}}
         self.success = True
+        # Can't use update_status here, as we don't necessarily have a cmd available.
+        myGlobals.hartmannStatus = 'initialized'
 
-    def doHartmann(self,cmd,moveMotors=False,subFrame=True,plot=False):
+    def __call__(self, cmd, moveMotors=False, subFrame=True, plot=False):
         """
         Take and reduce a pair of hartmann exposures.
         Usually apply the recommended collimator moves.
@@ -413,17 +426,25 @@ class Hartmann(object):
         if plot is set, make a plot representing the calculation.
         """
         self.cmd = cmd
-        
-        moveMotors = "noCorrect" not in cmd.cmd.keywords
-        subFrame = "noSubframe" not in cmd.cmd.keywords
-        
-        # take the hartmann frames.
-        exposureId = self.take_hartmanns(subFrame)
-        # Perform the collimation calculations
-        self.collimate(exposureId[0],exposureId[1],moveMotors=moveMotors,plot=plot)
-        if self.success and moveMotors:
-            for spec,piston in self.result.items():
-                self.move_motors(spec,piston)
+
+        try:
+            # take the hartmann frames.
+            exposureId = self.take_hartmanns(subFrame)
+            # Perform the collimation calculations
+            self.collimate(exposureId[0],exposureId[1],moveMotors=moveMotors,plot=plot)
+            if self.success and moveMotors:
+                update_status(self.cmd, 'moving')
+                for spec,piston in self.result.items():
+                    self.move_motors(spec,piston)
+        except HartError as e:
+            self.cmd.error('text="%s"'%e)
+            self.success = False
+        except Exception as e:
+            self.cmd.error('text="Unhandled Exception when processing Hartmanns!"')
+            self.cmd.error('text="%s"'%e)
+            self.success = False
+
+        update_status(self.cmd, 'idle')
     #...
 
     def bundle_result(self, cams, results):
@@ -447,7 +468,7 @@ class Hartmann(object):
 
         self.bundle_result(docams, results)
 
-    def collimate(self, expnum1, expnum2=None, indir=None, mjd=50000,
+    def collimate(self, expnum1, expnum2=None, indir=None, mjd=None,
                   specs=['sp1','sp2'],docams1=['b1','r1'],docams2=['b2','r2'],
                   test=False,plot=False,cmd=None,moveMotors=False):
         """
@@ -456,6 +477,7 @@ class Hartmann(object):
         expnum1: first exposure number of raw sdR file (integer).
         expnum2: second exposure number (default: expnum1+1)
         indir:   directory where the exposures are located.
+        mjd:     MJD of exposures in /data directory.
         spec:    spectrograph(s) to collimate ('sp1','sp2',['sp1','sp2'])
         docams1: camera(s) in sp1 to collimate ('b1','r1',['b1','r1'])
         docams2: camera(s) in sp2 to collimate ('b2','r2',['b2','r2'])
@@ -464,6 +486,9 @@ class Hartmann(object):
         cmd:     command handler
         moveMotors: If True, actually apply the calculated specMech moves.
         """
+
+        update_status(self.cmd, 'processing')
+
         self.test = test
         if cmd is not None:
             self.cmd = cmd
@@ -503,6 +528,9 @@ class Hartmann(object):
         Take a pair of hartmann exposures, in self.subFrame if requested.
         Returns the exposure IDs of the two exposures.
         """
+
+        update_status(self.cmd, 'exposing')
+
         exposureIds = []
         timeLim = 90.0
         for side in 'left','right':
@@ -511,9 +539,7 @@ class Hartmann(object):
             ret = self.actor.cmdr.call(actor='boss',forUserCmd=self.cmd,
                                        cmdStr=cmdStr,timeLim=timeLim)
             if ret.didFail:
-                self.cmd.error('text="failed to take %s hartmann exposure"' % (side))
-                self.success = False
-                return None
+                raise HartError('Failed to take %s hartmann exposure"' % (side))
             exposureId = self.models["boss"].keyVarDict["exposureId"][0]
             # ????
             # TBD: why was there an exposureId+1 here???
@@ -552,7 +578,7 @@ class Hartmann(object):
         if cmdVar.didFail:
             raise HartError('Failed to move collimator pistons.')
     
-    def _make_plot(self,expnum1,expnum2):
+    def _make_plot(self, expnum1, expnum2):
         """Save a plot of the pixel vs. correlation for this collimation."""
         # !!!!!!!!!!!!
         # TBD: should make a combined plot for all
