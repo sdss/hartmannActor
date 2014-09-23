@@ -81,7 +81,8 @@ class OneCamResult(object):
 
 class OneCam(object):
     """Collimate one camera."""
-    def __init__(self, cmd, m, b, bsteps, expnum1, expnum2, indir, test=False):
+    def __init__(self, cmd, m, b, bsteps, coeff,
+                 expnum1, expnum2, indir, test=False):
         self.cmd = cmd
         self.test = test
         
@@ -101,20 +102,18 @@ class OneCam(object):
         # collimator motion constants for the different regions.
         self.m = m #{'b1':1.,'b2':1.,'r1':1.,'r2':1.}
         self.b = b #{'b1':0.129,'b2':0.00,'r1':-0.229,'r2':0.068}
-        
+
+        # steps per degree for the blue ring.
+        self.bsteps = bsteps
         # "funny fudge factors" from Kyle Dawson
-        # TBD: The "funny fudge factors" can be turned into a single number, and
-        # there's no really good reason to not just make them one constant.
         # These values were intially determined by comparing to the original SDSS spectrographs
         # They need to be adjusted when, e.g., the spectrograph motors are changed.
         # pixscale = -15. vs. pixscale/24. is because of the change from SDSS to BOSS
         pixscale = -15. # in microns
-        rfudge = -9150*1.12*pixscale/24.
-        # steps per degree for the blue ring.
-        self.bsteps = bsteps
-        self.fudge = {'b1':-31.87*self.bsteps*pixscale/24.,
-                      'b2':-28.95*self.bsteps*pixscale/24.,
-                      'r1':rfudge,'r2':rfudge}
+        self.fudge = {'b1':coeff['b1']*self.bsteps*pixscale,
+                      'b2':coeff['b2']*self.bsteps*pixscale,
+                      'r1':coeff['r1']*pixscale,
+                      'r2':coeff['r2']*pixscale}
 
         # region to use in the analysis. [xlow,xhigh,ylow,yhigh]
         # NOTE: this region is chosen to have no blending and strong lines.
@@ -396,10 +395,12 @@ class Hartmann(object):
     """
     Call Hartmann.doHartmann to take and reduce a pair of hartmann exposures.
     """
-    def __init__(self, actor, m, b, constants):
+    def __init__(self, actor, m, b, constants, coeff):
         """
         Actor can be None, if you don't need to send an actual commands.
         Need m and b, the slope and intercept of the collimator motor relation.
+        constants is a dictionary with various parameters for OneCam.
+        coeff is a cam dictionary of the "fudge factors" for OneCam.
         """
 
         self.actor = actor
@@ -415,6 +416,8 @@ class Hartmann(object):
         self.bsteps = constants['bsteps']
         # tolerance for bad residual on blue ring
         self.badres = constants['badres']
+
+        self.coeff = coeff
         
         # the sub-frame region on the chip to read out when doing quick-hartmanns.
         self.subFrame = [850,1400]
@@ -475,7 +478,8 @@ class Hartmann(object):
         """The guts of the collimation, to be wrapped in a try:except block."""
         # pool = ThreadPool(len(docams))
         pool = Pool(len(docams))
-        oneCam = OneCam(self.cmd, self.m, self.b, self.bsteps, expnum1, expnum2, indir, moveMotors)
+        oneCam = OneCam(self.cmd, self.m, self.b, self.bsteps, self.coeff,
+                        expnum1, expnum2, indir, moveMotors)
         results = pool.map(oneCam, docams)
         pool.close()
         pool.join()

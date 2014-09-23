@@ -16,13 +16,20 @@ def get_collimation_constants(config):
     m = {}
     b = {}
     constants = {}
+    coeff = {}
     for x in config.options('m'):
         m[x] = config.getfloat('m',x)
+
     for x in config.options('b'):
         b[x] = config.getfloat('b',x)
+
     for x in config.options('constants'):
         constants[x] = config.getfloat('constants',x)
-    return m,b,constants
+
+    for x in config.options('coeff'):
+        coeff[x] = config.getfloat('coeff',x)
+
+    return m,b,constants, coeff
 
 class Hartmann(actorcore.Actor.Actor):
     def __init__(self, name, productName=None, configFile=None, debugLevel=10):
@@ -37,8 +44,8 @@ class Hartmann(actorcore.Actor.Actor):
         for actor in 'boss',:
             self.models[actor] = opscore.actor.model.Model(actor)
 
-        m,b,constants = get_collimation_constants(self.config)
-        myGlobals.hartmann = boss_collimate.Hartmann(self.actor, m, b, constants)
+        m,b,constants,coeff = get_collimation_constants(self.config)
+        myGlobals.hartmann = boss_collimate.Hartmann(self.actor, m, b, constants, coeff)
 
         #
         # Finally start the reactor

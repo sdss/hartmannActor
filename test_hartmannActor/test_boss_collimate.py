@@ -20,6 +20,13 @@ def get_expnum(filename):
     """Return the exposure number from this filename."""
     return int(filename.split('-')[-1].split('.')[0])
 
+def get_config_constants():
+    """Return various constants from the hartmannActor config file."""
+    config = ConfigParser.ConfigParser()
+    config.read('../etc/hartmann.cfg')
+    return hartmannActor_main.get_collimation_constants(config)
+
+
 # Note: to take sample test exposures, you can't use flavor "science",
 # because that closes the screen, unless you alsof specify "hartmann=left/right"
 # It's best to take these as "boss exposure arc"
@@ -64,7 +71,8 @@ full_result = {'sp1':{'b':b1,'r':r1},'sp2':{'b':b2,'r':r2}}
 class TestOneCam(hartmannTester.HartmannTester, unittest.TestCase):
     def setUp(self):
         super(TestOneCam,self).setUp()
-        self.oneCam = boss_collimate.OneCam(self.cmd, None, None, 292., 0, 0, '')
+        m,b,constants,coeff = get_config_constants()
+        self.oneCam = boss_collimate.OneCam(self.cmd, None, None, constants['bsteps'], coeff, 0, 0, '')
         self.spec = 'sp2'
         self.cam = 'r2'
         self.oneCam.spec = self.spec
@@ -159,11 +167,9 @@ class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
     def setUp(self):
         super(TestHartmann,self).setUp()
         self.actor.models = self.actorState.models
-        config = ConfigParser.ConfigParser()
-        config.read('../etc/hartmann.cfg')
-        m,b,constants = hartmannActor_main.get_collimation_constants(config)
+        m,b,constants,coeff = get_config_constants()
 
-        self.hart = boss_collimate.Hartmann(self.actor, m, b, constants)
+        self.hart = boss_collimate.Hartmann(self.actor, m, b, constants, coeff)
         self.hart.cmd = self.cmd
         self.hart.mjd = 12345
         

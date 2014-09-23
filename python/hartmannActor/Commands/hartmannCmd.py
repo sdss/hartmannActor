@@ -84,7 +84,7 @@ class hartmannCmd(object):
         subFrame = "noSubframe" not in cmd.cmd.keywords
         
         hartmann.reinit()
-        hartmann(cmd.cmd,moveMotors=moveMotors,subFrame=subFrame)
+        hartmann(cmd,moveMotors=moveMotors,subFrame=subFrame)
         if hartmann.success:
             cmd.finish()
         else:
