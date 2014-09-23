@@ -108,10 +108,10 @@ class OneCam(object):
         # "funny fudge factors" from Kyle Dawson
         # These values were intially determined by comparing to the original SDSS spectrographs
         # They need to be adjusted when, e.g., the spectrograph motors are changed.
-        # pixscale = -15. vs. pixscale/24. is because of the change from SDSS to BOSS
-        pixscale = -15. # in microns
-        self.fudge = {'b1':coeff['b1']*self.bsteps*pixscale,
-                      'b2':coeff['b2']*self.bsteps*pixscale,
+        # pixscale = 15. vs. pixscale/24. is because of the change from SDSS to BOSS
+        pixscale = 15. # in microns
+        self.fudge = {'b1':coeff['b1']*pixscale,
+                      'b2':coeff['b2']*pixscale,
                       'r1':coeff['r1']*pixscale,
                       'r2':coeff['r2']*pixscale}
 
