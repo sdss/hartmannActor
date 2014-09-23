@@ -50,7 +50,7 @@ def main(argv=None):
         expnum2 = get_expnum(expnum2)
 
     if '/data/spectro' in indir:
-        mjd = os.path.split(indir)[-1]
+        mjd = int(os.path.split(indir)[-1])
     else:
         mjd = None
 
