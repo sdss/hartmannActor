@@ -21,7 +21,7 @@ def get_expnum(filename):
 def cams_params(values):
     """Return a converted, split 'b1,r1,b2,r2' string as a dictionary."""
     cams = ['b1','r1','b2','r2']
-    return dict(zip(cams, [float(x) for x in values.split(',')]))
+    return dict(zip(cams, values))
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, prog=os.path.basename(sys.argv[0]))
@@ -29,16 +29,16 @@ def main(argv=None):
                         help='The first hartmann file (generally left).')
     parser.add_argument('FILE2', metavar='FILE2', default=None, nargs='?',
                         help='Optional second hartmann file (generally right).')
-    parser.add_argument('-m', default=None, dest='m',
-                        help='Slope of the offset->motor function: b1,r1,b2,r2.')
-    parser.add_argument('-b', default=None, dest='b',
-                        help='Intercept of the offset->motor function: b1,r1,b2,r2.')
+    parser.add_argument('-m', default=None, dest='m', nargs=4, type=float,
+                        help='Slope of the offset->motor function: b1 r1 b2 r2.')
+    parser.add_argument('-b', default=None, dest='b', nargs=4, type=float,
+                        help='Intercept of the offset->motor function: b1 r1 b2 r2.')
     parser.add_argument('--bsteps', default=None, dest='bsteps', type=float,
                         help='steps per degree for the blue ring')
     parser.add_argument('--badres', default=None, dest='badres', type=float,
                         help='tolerance for bad residual on blue ring')
-    parser.add_argument('--coeff', default=None, dest='coeff',
-                        help='"funny fudge factors": b1,r1,b2,r2.')
+    parser.add_argument('--coeff', default=None, dest='coeff', nargs=4, type=float,
+                        help='"funny fudge factors": b1 r1 b2 r2.')
 
     args = parser.parse_args()
 
