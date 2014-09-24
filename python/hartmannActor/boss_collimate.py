@@ -67,7 +67,7 @@ class OneCamResult(object):
     Store the results of a oneCam call().
     Makes multiprocessing much easier.
     """
-    def __init__(self, cam, success, xshift, coeff, ibest, xoffset, piston):
+    def __init__(self, cam, success, xshift, coeff, ibest, xoffset, piston, messages):
         self.cam = cam
         self.success = success
         self.xshift = xshift
@@ -75,15 +75,15 @@ class OneCamResult(object):
         self.ibest = ibest
         self.xoffset = xoffset
         self.piston = piston
+        self.messages = messages
 
     def __str__(self):
         return '%s:%s : %s, %s'%(self.cam, self.success, self.xoffset, self.piston)
 
 class OneCam(object):
     """Collimate one camera."""
-    def __init__(self, cmd, m, b, bsteps, coeff,
+    def __init__(self, m, b, bsteps, coeff,
                  expnum1, expnum2, indir, test=False):
-        self.cmd = cmd
         self.test = test
         
         self.indir = indir
@@ -138,8 +138,11 @@ class OneCam(object):
         self.ibest = None
         self.xoffset = None
         self.piston = None
+
+        # will contain tuples of msglevel (i,w,e) and the associated message.
+        self.messages = []
     #...
-    
+
     def __call__(self, cam):
         """
         Compute the collimation values for one camera.
@@ -147,7 +150,9 @@ class OneCam(object):
         See parameters for self.collimate().
         """
         if cam not in ['r1','r2','b1','b2']:
-            raise HartError("I do not recognize camera %s"%self.cam)
+            self.add_msg('e','text="I do not recognize camera %s"'%cam)
+            self.success = False
+            return None
         self.cam = cam
         self.spec = 'sp'+cam[1]
 
@@ -159,14 +164,18 @@ class OneCam(object):
             self._find_collimator_motion()
         # Have to handle exceptions here, because we're called via multiprocess.
         except HartError as e:
-            self.cmd.error('text="%s"'%e)
+            self.add_msg('e','text="cam %s had error: %s"'%(self.cam, e))
             self.success = False
         except Exception as e:
-            self.cmd.error('text="!!!! Unknown error when processing Hartmanns! !!!!"')
-            self.cmd.error('text="%s"'%e)
+            self.add_msg('e','text="!!!! Unknown error when processing Hartmanns! !!!!"')
+            self.add_msg('e','text="cam %s reported %s: %s"'%(self.cam, type(e).__name__, e))
             self.success = False
-        return OneCamResult(cam, self.success, self.xshift, self.coeff, self.ibest, self.xoffset, self.piston)
+        return OneCamResult(cam, self.success, self.xshift, self.coeff, self.ibest, self.xoffset, self.piston, self.messages)
     
+    def add_msg(self, level, message):
+        """Add a message to the message list to be returned."""
+        self.messages.append((level, message))
+
     def check_Hartmann_header(self,header):
         """
         Return whether this is a left, right or unknown Hartmann.
@@ -198,11 +207,11 @@ class OneCam(object):
         if ffs:
             ffs_sum = sum_string(ffs)
             if ffs_sum < 8:
-                self.cmd.warn("text='Only %d of 8 flat-field petals closed: %s'"%(ffs_sum,ffs))
+                self.add_msg('w',"text='%s: Only %d of 8 flat-field petals closed: %s'"%(self.cam, ffs_sum,ffs))
             if ffs_sum == 0:
                 isBad = True
         else:
-            self.cmd.warn("text='FFS not in FITS header!'")
+            self.add_msg('w',"text='%s: FFS not in FITS header!'"%self.cam)
             isBad = True
         
         Ne = header.get('NE',None)
@@ -212,13 +221,13 @@ class OneCam(object):
             Ne_sum = sum_string(Ne)
             HgCd_sum = sum_string(HgCd)
             if Ne_sum < 4:
-                self.cmd.warn("text='Only %d of 4 Ne lamps turned on: %s'"%(Ne_sum,Ne))
+                self.add_msg('w',"text='%s: Only %d of 4 Ne lamps turned on: %s'"%(self.cam, Ne_sum, Ne))
             if HgCd_sum < 4:
-                self.cmd.warn("text='Only %d of 4 HgCd lamps turned on: %s'"%(HgCd_sum,HgCd))
+                self.add_msg('w',"text='%s: Only %d of 4 HgCd lamps turned on: %s'"%(self.cam, HgCd_sum, HgCd))
             if Ne_sum == 0 or HgCd_sum == 0:
                 isBad = True
         else:
-            self.cmd.warn("text='NE and/or HgCd not in FITS header.'")
+            self.add_msg('w',"text='%s: NE and/or HgCd not in FITS header.'"%self.cam)
             isBad = True
         
         return isBad
@@ -375,17 +384,17 @@ class OneCam(object):
 
         if offset < self.focustol:
             focus = 'In Focus'
-            msglvl = self.cmd.inform
+            msglvl = 'i'
         else:
             focus = 'Out of focus'
-            msglvl = self.cmd.warn
-        msglvl('%sMeanOffset=%.2f,"%s"'%(self.cam,offset,focus))
+            msglvl = 'w'
+        self.add_msg(msglvl,'%sMeanOffset=%.2f,"%s"'%(self.cam,offset,focus))
 
         piston = int(offset*self.fudge[self.cam])
         if 'r' in self.cam:
-            self.cmd.inform('%sPistonMove=%d'%(self.cam,piston))
+            self.add_msg('i','%sPistonMove=%d'%(self.cam,piston))
         else:
-            self.cmd.inform('%sRingMove=%.1f'%(self.cam,-piston/self.bsteps))
+            self.add_msg('i','%sRingMove=%.1f'%(self.cam,-piston/self.bsteps))
         self.piston = piston
     #...
 
@@ -474,16 +483,24 @@ class Hartmann(object):
             self.full_result['sp'+cam[1]][cam[0]] = result
             self.result['sp'+cam[1]][cam[0]] = result.piston
 
+    def output_messsages(self, results):
+        """Send the messages that each OneCam process produced."""
+        mdict = {'i':self.cmd.inform, 'w':self.cmd.warn, 'e':self.cmd.error}
+        for cam_result in results:
+            for msg in cam_result.messages:
+                mdict[msg[0]](msg[1])
+
     def _collimate(self, expnum1, expnum2, indir, moveMotors, docams):
         """The guts of the collimation, to be wrapped in a try:except block."""
         # pool = ThreadPool(len(docams))
         pool = Pool(len(docams))
-        oneCam = OneCam(self.cmd, self.m, self.b, self.bsteps, self.coeff,
+        oneCam = OneCam(self.m, self.b, self.bsteps, self.coeff,
                         expnum1, expnum2, indir, moveMotors)
         results = pool.map(oneCam, docams)
         pool.close()
         pool.join()
 
+        self.output_messsages(results)
         success = dict([(x.cam,x.success) for x in results])
         if not all(success.values()):
             failures = [x for x in success if not success[x]]
