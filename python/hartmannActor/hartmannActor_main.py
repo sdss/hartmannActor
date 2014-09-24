@@ -45,7 +45,7 @@ class Hartmann(actorcore.Actor.Actor):
             self.models[actor] = opscore.actor.model.Model(actor)
 
         m,b,constants,coeff = get_collimation_constants(self.config)
-        myGlobals.hartmann = boss_collimate.Hartmann(self.actor, m, b, constants, coeff)
+        myGlobals.hartmann = boss_collimate.Hartmann(self, m, b, constants, coeff)
 
         #
         # Finally start the reactor
