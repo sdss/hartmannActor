@@ -33,12 +33,11 @@ def get_collimation_constants(config):
 
 class Hartmann(actorcore.Actor.Actor):
     def __init__(self, name, productName=None, configFile=None, debugLevel=10):
+        self.headURL = '$HeadURL: svn+ssh://sdss3svn@sdss3.org/repo/ops/actors/hartmannActor/trunk/python/hartmannActor/hartmannActor_main.py $'
         actorcore.Actor.Actor.__init__(self, name, productName=productName, configFile=configFile)
 
-        self.headURL = '$HeadURL: svn+ssh://sdss3svn@sdss3.org/repo/ops/actors/hartmannActor/trunk/python/hartmannActor/hartmannActor_main.py $'
-
         self.logger.setLevel(debugLevel)
-        self.logger.propagate = True
+        #self.logger.propagate = True
 
         self.models = {}
         for actor in 'boss',:

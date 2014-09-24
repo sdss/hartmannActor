@@ -35,6 +35,7 @@ the Hartmann-r exposure by in Y to agree with the Hartmann-l exposure.
 
 import os.path
 from multiprocessing import Pool
+import time
 
 try:
     fitsio = True
@@ -49,6 +50,8 @@ from scipy.ndimage import interpolation
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+
+import RO.Astro.Tm.MJDFromPyTuple as astroMJD
 
 import hartmannActor.myGlobals as myGlobals
 
@@ -134,6 +137,7 @@ class OneCam(object):
         # Did everything work?
         self.success = True
         # to store the results of the calculations.
+        self.coeff = None
         self.xshift = None
         self.ibest = None
         self.xoffset = None
@@ -164,11 +168,11 @@ class OneCam(object):
             self._find_collimator_motion()
         # Have to handle exceptions here, because we're called via multiprocess.
         except HartError as e:
-            self.add_msg('e','text="cam %s had error: %s"'%(self.cam, e))
+            self.add_msg('e','text="%s had error: %s"'%(self.cam, e))
             self.success = False
         except Exception as e:
             self.add_msg('e','text="!!!! Unknown error when processing Hartmanns! !!!!"')
-            self.add_msg('e','text="cam %s reported %s: %s"'%(self.cam, type(e).__name__, e))
+            self.add_msg('e','text="%s reported %s: %s"'%(self.cam, type(e).__name__, e))
             self.success = False
         return OneCamResult(cam, self.success, self.xshift, self.coeff, self.ibest, self.xoffset, self.piston, self.messages)
     
@@ -582,13 +586,12 @@ class Hartmann(object):
                                        cmdStr=cmdStr,timeLim=timeLim)
             if ret.didFail:
                 raise HartError('Failed to take %s hartmann exposure"' % (side))
-            exposureId = self.models["boss"].keyVarDict["exposureId"][0]
-            # ????
-            # TBD: why was there an exposureId+1 here???
-            # ????
-            # exposureId += 1
+            # opscore fake-Ints don't cleanly pickle for multiprocessing.
+            exposureId = int(self.models["boss"].keyVarDict["exposureId"][0])
+            # NOTE: exposureId is a lagging indicator.
+            exposureId += 1
             exposureIds.append(exposureId)
-            self.mjd = int(self.models["boss"].keyVarDict["BeginExposure"][1])
+            self.mjd = int(astroMJD.mjdFromPyTuple(time.gmtime())+0.3)
             self.cmd.inform('text="got hartmann %s exposure %d"' % (side, exposureId))
         return exposureIds
 
@@ -649,7 +652,6 @@ class Hartmann(object):
         ax2.axis([result[cam].xshift[inset[0]],result[cam].xshift[inset[1]],ylim2[0],ylim2[1]])
         ax1.set_xlabel('pixels')
         ax1.set_ylabel('cross-correlation')
-
 
     def make_plot(self, expnum1, expnum2):
         """Save a plot of the pixel vs. correlation for this collimation."""

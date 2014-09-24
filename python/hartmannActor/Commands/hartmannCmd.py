@@ -65,7 +65,6 @@ class hartmannCmd(object):
         moveMotors = "noCorrect" not in keywords
 
         hartmann.reinit()
-        cmd.inform('text=%s'%qstr("running collimate on %s/%s" % (mjd,expnum1)))
         hartmann.collimate(expnum1, expnum2=expnum2, mjd=mjd, cmd=cmd,
                            moveMotors=moveMotors)
         if hartmann.success:
