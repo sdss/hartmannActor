@@ -34,7 +34,7 @@ class hartmannCmd(object):
             ('ping', '', self.ping),
             ('status', '', self.status),
             ('collimate', '[noCorrect] [noSubframe]', self.collimate),
-            ('recompute', '<id> [<id2>] [<mjd>] [noCorrect] [noSubframe]', self.recompute),
+            ('recompute', '<id> [<id2>] [<mjd>] [noCorrect]', self.recompute),
         ]
 
     def ping(self, cmd):
@@ -54,21 +54,20 @@ class hartmannCmd(object):
         """ Reduce a given pair of already taken exposures. """
         hartmann = myGlobals.hartmann
         keywords = cmd.cmd.keywords
-        expnum1 = keywords['id'].values[0]
-        expnum2 = keywords['id2'].values[0] if 'id2' in keywords else None
+        expnum1 = int(keywords['id'].values[0])
+        expnum2 = int(keywords['id2'].values[0]) if 'id2' in keywords else None
         if 'mjd' in keywords:
-            mjd = keywords['mjd'].values[0]
+            mjd = int(keywords['mjd'].values[0])
         else:
             # SDSS MJD is truncaded (MJD_TAI + 0.3)
             mjd = int(astroMJD.mjdFromPyTuple(time.gmtime())+0.3)
 
         moveMotors = "noCorrect" not in keywords
-        subFrame = "noSubframe" not in keywords
 
         hartmann.reinit()
         cmd.inform('text=%s'%qstr("running collimate on %s/%s" % (mjd,expnum1)))
         hartmann.collimate(expnum1, expnum2=expnum2, mjd=mjd, cmd=cmd,
-                           moveMotors=moveMotors, subFrame=subFrame)
+                           moveMotors=moveMotors)
         if hartmann.success:
             cmd.finish()
         else:
