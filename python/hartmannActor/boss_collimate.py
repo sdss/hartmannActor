@@ -70,7 +70,7 @@ class OneCamResult(object):
     Store the results of a oneCam call().
     Makes multiprocessing much easier.
     """
-    def __init__(self, cam, success, xshift, coeff, ibest, xoffset, piston, messages):
+    def __init__(self, cam, success, xshift, coeff, ibest, xoffset, piston, focused, messages):
         self.cam = cam
         self.success = success
         self.xshift = xshift
@@ -142,6 +142,7 @@ class OneCam(object):
         self.ibest = None
         self.xoffset = None
         self.piston = None
+        self.focused = False
 
         # will contain tuples of msglevel (i,w,e) and the associated message.
         self.messages = []
@@ -174,7 +175,7 @@ class OneCam(object):
             self.add_msg('e','text="!!!! Unknown error when processing Hartmanns! !!!!"')
             self.add_msg('e','text="%s reported %s: %s"'%(self.cam, type(e).__name__, e))
             self.success = False
-        return OneCamResult(cam, self.success, self.xshift, self.coeff, self.ibest, self.xoffset, self.piston, self.messages)
+        return OneCamResult(cam, self.success, self.xshift, self.coeff, self.ibest, self.xoffset, self.piston, self.focused, self.messages)
     
     def add_msg(self, level, message):
         """Add a message to the message list to be returned."""
@@ -388,9 +389,11 @@ class OneCam(object):
 
         if abs(offset) < self.focustol:
             focus = 'In Focus'
+            self.focused = True
             msglvl = 'i'
         else:
             focus = 'Out of focus'
+            self.focused = False
             msglvl = 'w'
         self.add_msg(msglvl,'%sMeanOffset=%.2f,"%s"'%(self.cam,offset,focus))
 

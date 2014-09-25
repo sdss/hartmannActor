@@ -54,7 +54,7 @@ class TestHartmannCmd(HartmannCmdTester,unittest.TestCase):
         hart = FakeHartmann(success)
         myGlobals.hartmann = hart
         self._run_cmd('recompute %s'%args, None)
-        self._check_cmd(0,1,0,0, True, not success)
+        self._check_cmd(0,0,0,0, True, not success)
         self.assertEqual(hart.expnum1,expect['expnum1'])
         self.assertEqual(hart.kwargs['expnum2'],expect.get('expnum2'))
         self.assertEqual(hart.kwargs['mjd'],expect.get('mjd'))
