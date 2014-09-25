@@ -386,7 +386,7 @@ class OneCam(object):
             b = 0.
         offset = self.xoffset*m + b
 
-        if offset < self.focustol:
+        if abs(offset) < self.focustol:
             focus = 'In Focus'
             msglvl = 'i'
         else:
