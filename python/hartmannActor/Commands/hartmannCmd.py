@@ -65,8 +65,10 @@ class hartmannCmd(object):
         moveMotors = "noCorrect" not in keywords
 
         hartmann.reinit()
-        hartmann.collimate(expnum1, expnum2=expnum2, mjd=mjd, cmd=cmd,
-                           moveMotors=moveMotors)
+        hartmann.collimate(expnum1, expnum2=expnum2, mjd=mjd, cmd=cmd)
+        if hartmann.success and moveMotors:
+            hartmann.move_motors()
+        
         if hartmann.success:
             cmd.finish()
         else:

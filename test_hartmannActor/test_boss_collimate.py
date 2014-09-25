@@ -2,10 +2,11 @@
 Test the Hartmann collimation routine converted from idlspec2d combsmallcollimate.
 """
 
+import os
 import unittest
-import pyfits
 import ConfigParser
 
+import pyfits
 import numpy as np
 
 import hartmannTester
@@ -20,11 +21,43 @@ def get_expnum(filename):
     """Return the exposure number from this filename."""
     return int(filename.split('-')[-1].split('.')[0])
 
+def get_mjd(filename):
+    """Return the mjd from a /data/spectro directory path."""
+    return int(os.path.split(filename)[0])
+
 def get_config_constants():
     """Return various constants from the hartmannActor config file."""
     config = ConfigParser.ConfigParser()
     config.read('../etc/hartmann.cfg')
     return hartmannActor_main.get_collimation_constants(config)
+
+
+# ########################################
+# NOTE:
+# When the collimation parameters are updated in hartmann.cfg, please update
+# the focused/notFocused directory, files, and piston/focused/moves values
+# to match what has been computed as the "correct" values.
+#
+# Please pick at least two files to test on, one that is mostly in focus, and one
+# that is mostly not in focus. A third that requires a blue ring move would
+# also be useful for completeness. If the focused is 3in/1out and 
+# notFocused is 3out/1in, you won't have to change the check_call test
+# in test_collimate_[not]focused().
+# ########################################
+
+focused_dir = '/data/spectro/56896'
+focused1 = 'sdR-b1-00183069.fit.gz'
+focused2 = 'sdR-b1-00183070.fit.gz'
+focused_pistons = {'sp1':{'b':int(-1.6*319.0),'r':1319},'sp2':{'b':int(-1.5*319.0),'r':-315}}
+focused_focused = {'sp1':{'b':True,'r':False},'sp2':{'b':True,'r':True}}
+focused_moves = {'sp1':-402, 'sp2':-409}
+
+notFocused1 = 'sdR-b1-00183065.fit.gz'
+notFocused2 = 'sdR-b1-00183066.fit.gz'
+notFocused_pistons = {'sp1':{'b':int(-5.6*319.0),'r':0},'sp2':{'b':int(-5.5*319.0),'r':-1577}}
+notFocused_focused = {'sp1':{'b':False,'r':True},'sp2':{'b':False,'r':False}}
+notFocused_moves = {'sp1':-889, 'sp2':-1671}
+# ########################################
 
 
 # Note: to take sample test exposures, you can't use flavor "science",
@@ -50,13 +83,8 @@ noFFS = None
 
 notHartmann = None
 
-focused1 = '/data/spectro/56896/sdR-b1-00183065.fit.gz'
-focused2 = '/data/spectro/56896/sdR-b1-00183066.fit.gz'
 
-notFocused1 = '/data/spectro/56896/sdR-b1-00183069.fit.gz'
-notFocused2 = '/data/spectro/56896/sdR-b1-00183070.fit.gz'
-
-# pre-cooked results for plotting, etc.
+# pre-cooked results for plotting without doing any computation.
 xshift = -2 + 0.5 * np.arange(80,dtype='f8')
 b1coeff = np.array([13578575671.429024, 13957607760.156925, 14337598371.420261, 14717447732.466045, 15096056070.541536, 15472323612.894087, 15845150586.770298, 16213437219.41724, 16576083738.081778, 16931990370.01193, 17280057342.45355, 17619184882.654633, 17948273217.86175, 18266222575.321724, 18571933182.28212, 18864305265.98989, 19142239053.69136, 19404634772.63464, 19650392650.066315, 19878412913.23327, 20087595789.383163, 20277015761.6572, 20446444336.777508, 20595827277.360176, 20725110346.021767, 20834239305.37888, 20923159918.048275, 20991817946.645813, 21040159153.78829, 21068129302.09245, 21075674154.174366, 21062739472.650772, 21029271020.137966, 20975214559.252735, 20900515852.61114, 20805120662.829853, 20688974752.525707, 20552023884.31456, 20394213820.813583, 20215490324.638084, 20015799158.406033, 19795303191.89246, 19555033723.510025, 19296239158.831383, 19020167903.42841, 18728068362.872047, 18421188942.736286, 18100778048.592266, 17768084086.012638, 17424355460.56907, 17070840577.83293, 16708787843.37779, 16339445662.774652, 15964062441.596525, 15583886585.414814, 15200166499.801704, 14814150590.329466, 14427087262.57019, 14040224922.096468, 13654811974.479586, 13272096825.291769, 12893179861.398504, 12518569394.838352, 12148625718.942526, 11783709127.04213, 11424179912.46857, 11070398368.553396, 10722724788.62834, 10381519466.02454, 10047142694.0732, 9719954766.105919, 9400315975.454065, 9088586615.448889, 8785126979.42247, 8490297360.705311, 8204458052.629222, 7927969348.525747, 7661191541.72605, 7404484925.562016, 7158209793.364207])
 r1coeff = np.array([448037727076.66925, 465178743372.0309, 482413041330.2614, 499697808009.79425, 516990230469.11383, 534247495766.63385, 551426790960.9138, 568485303110.3641, 585380219273.479, 602068726508.7711, 618508011874.6398, 634655262429.549, 650467665232.0454, 665902407340.5149, 680916675813.4915, 695467657709.4867, 709512540086.801, 723008510004.1033, 735912754519.6827, 748182460692.1958, 759774815579.9761, 770652012218.0188, 780796267547.0935, 790194804484.4994, 798834845947.5892, 806703614853.5004, 813788334119.5641, 820076226663.0332, 825554515401.2633, 830210423251.5308, 834031173130.913, 837003987956.9403, 839116090646.712, 840354704117.6395, 840707051286.8663, 840160355071.7391, 838701838389.5554, 836318724157.5428, 832998235292.9568, 828727594713.137, 823494025335.3344, 817293910443.0667, 810160274785.203, 802135303476.6964, 793261181632.6339, 783580094368.0962, 773134226798.0857, 761965764037.7272, 750116891202.0314, 737629793406.0483, 724546655764.8596, 710909663393.4697, 696761001406.9686, 682142854920.458, 667097409048.8734, 651666848907.4242, 635893359611.0226, 619819126274.7905, 603486334013.7858, 586937167943.0563, 570213813177.6438, 553356372831.9546, 536396622017.93915, 519364253846.831, 502288961429.9011, 485200437878.424, 468128376303.66656, 451102469816.9171, 434152411529.40753, 417307894552.42773, 400598611997.2289, 384054256975.121, 367704522597.3041, 351579101975.1195, 335707688219.7725, 320119974442.5837, 304845653754.7822, 289914419267.6543, 275355964092.457, 261199981340.48422])
@@ -72,20 +100,20 @@ class TestOneCam(hartmannTester.HartmannTester, unittest.TestCase):
     def setUp(self):
         super(TestOneCam,self).setUp()
         m,b,constants,coeff = get_config_constants()
-        self.oneCam = boss_collimate.OneCam(None, None, constants['bsteps'], coeff, 0, 0, '')
+        self.oneCam = boss_collimate.OneCam(None, None, constants['bsteps'], constants['focustol'], coeff, 0, 0, '')
         self.spec = 'sp2'
         self.cam = 'r2'
         self.oneCam.spec = self.spec
         self.oneCam.cam = self.cam
 
-    def _check_Hartmann_header(self, filename, expect):
-        header = pyfits.getheader(data_dir + filename)
+    def _check_Hartmann_header(self, filename, expect, indir=data_dir):
+        header = pyfits.getheader(os.path.join(indir,filename))
         result = self.oneCam.check_Hartmann_header(header)
         self.assertEqual(result, expect)
     def test_check_Hartmann_header_left(self):
-        self._check_Hartmann_header(focused1, 'left')
+        self._check_Hartmann_header(focused1, 'left', indir=focused_dir)
     def test_check_Hartmann_header_right(self):
-        self._check_Hartmann_header(focused2, 'right')
+        self._check_Hartmann_header(focused2, 'right', indir=focused_dir)
     def test_check_Hartmann_header_None(self):
         self._check_Hartmann_header(maskOut1, None)
 
@@ -95,7 +123,7 @@ class TestOneCam(hartmannTester.HartmannTester, unittest.TestCase):
         self.assertEqual(len(self.oneCam.messages),nWarn)
         self._check_cmd(0,0,0,0,False)
     def test_bad_header_ok(self):
-        header = pyfits.getheader(data_dir + focused1)
+        header = pyfits.getheader(os.path.join(focused_dir,focused1))
         self._bad_header(header, False, 0)
     def test_bad_header_noNe(self):
         header = pyfits.getheader(data_dir + NeOff1)
@@ -115,9 +143,9 @@ class TestOneCam(hartmannTester.HartmannTester, unittest.TestCase):
         header = pyfits.getheader(data_dir + notHartmann)
         self._bad_header(header, True, 1)
 
-    def _load_data(self, expnum1, expnum2):
+    def _load_data(self, expnum1, expnum2, indir=data_dir):
         self.oneCam.cam = 'r2'
-        self.oneCam._load_data(data_dir, expnum1, expnum2)
+        self.oneCam._load_data(indir, expnum1, expnum2)
         self.assertIsInstance(self.oneCam.bigimg1, np.ndarray)
         self.assertIsInstance(self.oneCam.bigimg2, np.ndarray)
         msg = "Files should have different content."
@@ -126,11 +154,11 @@ class TestOneCam(hartmannTester.HartmannTester, unittest.TestCase):
     def test_load_data_ok_focused(self):
         expnum1 = get_expnum(focused1)
         expnum2 = get_expnum(focused2)
-        self._load_data(expnum1, expnum2)
+        self._load_data(expnum1, expnum2, indir=focused_dir)
     def test_load_data_ok_notFocused(self):
         expnum1 = get_expnum(notFocused1)
         expnum2 = get_expnum(notFocused2)
-        self._load_data(expnum1, expnum2)
+        self._load_data(expnum1, expnum2, indir=focused_dir)
 
     def _load_data_not_ok(self, expnum1, expnum2, nWarn, errMsg):
         self.oneCam.cam = 'r2'
@@ -179,15 +207,20 @@ class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
         self.hart.cmd = self.cmd
         self.hart.mjd = 12345
         
-    def test_move_motors(self):
-        self.hart.move_motors('sp2', 10)
+    def test_move_motor(self):
+        self.hart._move_motor('sp2', 10)
         self._check_cmd(1,0,0,0,False)
-    def test_move_motors_fails(self):
+    def test_move_motor_fails(self):
         self.cmd.failOn = 'boss moveColl spec=sp2 piston=20'
         with self.assertRaises(boss_collimate.HartError) as cm:
-            self.hart.move_motors('sp2', 20)
+            self.hart._move_motor('sp2', 20)
         self.assertIn('Failed to move collimator pistons', cm.exception.message)
         self._check_cmd(1,0,0,0,False)
+
+    def test_move_motors(self):
+        self.hart.moves = {'sp1':100, 'sp2':200}
+        self.hart.move_motors()
+        self._check_cmd(2,1,0,0,False)
 
     def _take_hartmanns(self,nCalls,nInfo,nWarn,nErr, expect):
         result = self.hart.take_hartmanns(True)
@@ -243,12 +276,15 @@ class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
         self._mask_tester(maskOut1)
 
     def test_make_plot(self):
-        exp1 = get_expnum(notFocused1)
-        exp2 = get_expnum(notFocused2)
-        self.hart.mjd = 12345
+        exp1 = 12345
+        exp2 = 67890
+        self.hart.mjd = 24680
+        filename = 'Collimate-24680_00012345-00067890.png'
         self.hart.full_result = full_result
         self.hart.make_plot(exp1, exp2)
-        
+        self.assertTrue(os.path.exists(filename),'Did not create expected PNG file')
+        os.remove(filename)
+    
     @unittest.skip('need file for this test!')
     def test_no_light(self):
         """Test with a file that has no signal."""
@@ -256,32 +292,28 @@ class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
         self.hart.collimate(exp1,cmd=self.cmd)
         self._check_cmd(3,0,0,0,self.hart.success)
 
-    def test_collimate_one_file_focused(self):
+    def test_collimate_focused(self):
         """Test collimating given left expnum, the subsequent expnum is right."""
-        expect = {'sp1':{'b':5.6,'r':0},'sp2':{'b':5.5,'r':-1577}}
-        focused = {'sp1':{'b':True,'r':True},'sp2':{'b':True,'r':False}}
         exp1 = get_expnum(focused1)
-        self.hart.collimate(exp1,indir=data_dir,cmd=self.cmd,plot=True)
+        self.hart.collimate(exp1,indir=focused_dir,cmd=self.cmd,plot=True)
         self.assertTrue(self.hart.success)
         self._check_cmd(0,12,1,0,False)
-        # TBD: get correct result from combsmallcollimate.pro
-        self.assertEqual(expect, self.hart.result)
+        self.assertEqual(self.hart.result, focused_pistons)
+        self.assertEqual(self.hart.moves, focused_moves)
         for cam in self.hart.full_result:
-            self.assertEqual(focused[cam], self.hart.full_result[cam].focused)
-    
-    def test_collimate_two_files_notFocused(self):
+            self.assertEqual(self.hart.full_result[cam].focused, focused_focused[cam])
+
+    def test_collimate_notFocused(self):
         """Test collimating with files in correct order (left->right)."""
-        expect = {'sp1':{'b':1.6,'r':1319},'sp2':{'b':1.5,'r':-315}}
-        focused = {'sp1':{'b':True,'r':False},'sp2':{'b':True,'r':False}}
         exp1 = get_expnum(notFocused1)
         exp2 = get_expnum(notFocused2)
-        self.hart.collimate(exp1,exp2,indir=data_dir,cmd=self.cmd,plot=True)
+        self.hart.collimate(exp1,exp2,indir=focused_dir,cmd=self.cmd,plot=True)
         self.assertTrue(self.hart.success)
-        self._check_cmd(0,12,1,0,False)
-        # TBD: get correct result from combsmallcollimate.pro
-        self.assertEqual(expect, self.hart.result)
+        self._check_cmd(0,10,3,0,False)
+        self.assertEqual(self.hart.result, notFocused_pistons)
+        self.assertEqual(self.hart.moves, notFocused_moves)
         for cam in self.hart.full_result:
-            self.assertEqual(focused[cam], self.hart.full_result[cam].focused)
+            self.assertEqual(self.hart.full_result[cam].focused, notFocused_focused[cam])
 
     def test_call_exposure_fails(self):
         """Test collimating where the first file fails"""

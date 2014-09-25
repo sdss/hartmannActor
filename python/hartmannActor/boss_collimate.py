@@ -85,7 +85,7 @@ class OneCamResult(object):
 
 class OneCam(object):
     """Collimate one camera."""
-    def __init__(self, m, b, bsteps, coeff,
+    def __init__(self, m, b, bsteps, focustol, coeff,
                  expnum1, expnum2, indir, test=False):
         self.test = test
         
@@ -97,7 +97,7 @@ class OneCam(object):
         self.basename = 'sdR-%s-%08d.fit.gz'
 
         # allowable focus tolerance (pixels): if offset is less than this, we're in focus.
-        self.focustol = 0.20
+        self.focustol = focustol
         
         # maximum pixel shift to search in X
         self.maxshift = 2
@@ -432,7 +432,9 @@ class Hartmann(object):
         self.bsteps = constants['bsteps']
         # tolerance for bad residual on blue ring
         self.badres = constants['badres']
-
+        # how much pixel-to-pixel separation we allow to be "in focus"
+        self.focustol = constants['focustol']
+        
         self.coeff = coeff
         
         # the sub-frame region on the chip to read out when doing quick-hartmanns.
@@ -445,10 +447,11 @@ class Hartmann(object):
     #...
     
     def reinit(self):
+        self.success = True
         # final results go here
         self.result = {'sp1':{'b':0.,'r':0.},'sp2':{'b':0.,'r':0.}}
         self.full_result = {'sp1':{'b':None,'r':None},'sp2':{'b':None,'r':None}}
-        self.success = True
+        self.moves = {'sp1':0, 'sp2':0}
         # Can't use update_status here, as we don't necessarily have a cmd available.
         myGlobals.hartmannStatus = 'initialized'
 
@@ -468,11 +471,9 @@ class Hartmann(object):
             # take the hartmann frames.
             exposureId = self.take_hartmanns(subFrame)
             # Perform the collimation calculations
-            self.collimate(exposureId[0],exposureId[1],moveMotors=moveMotors,plot=plot)
+            self.collimate(exposureId[0],exposureId[1],plot=plot)
             if self.success and moveMotors:
-                update_status(self.cmd, 'moving')
-                for spec,piston in self.result.items():
-                    self.move_motors(spec,piston)
+                self.move_motors()
         except HartError as e:
             self.cmd.error('text="%s"'%e)
             self.success = False
@@ -497,12 +498,12 @@ class Hartmann(object):
             for msg in cam_result.messages:
                 mdict[msg[0]](msg[1])
 
-    def _collimate(self, expnum1, expnum2, indir, moveMotors, docams):
+    def _collimate(self, expnum1, expnum2, indir, docams):
         """The guts of the collimation, to be wrapped in a try:except block."""
         # pool = ThreadPool(len(docams))
         pool = Pool(len(docams))
-        oneCam = OneCam(self.m, self.b, self.bsteps, self.coeff,
-                        expnum1, expnum2, indir, moveMotors)
+        oneCam = OneCam(self.m, self.b, self.bsteps, self.focustol, self.coeff,
+                        expnum1, expnum2, indir)
         results = pool.map(oneCam, docams)
         pool.close()
         pool.join()
@@ -517,7 +518,7 @@ class Hartmann(object):
 
     def collimate(self, expnum1, expnum2=None, indir=None, mjd=None,
                   specs=['sp1','sp2'],docams1=['b1','r1'],docams2=['b2','r2'],
-                  test=False, plot=False, cmd=None, moveMotors=False):
+                  test=False, plot=False, cmd=None):
         """
         Compute the spectrograph collimation focus from Hartmann mask exposures.
         
@@ -531,7 +532,6 @@ class Hartmann(object):
         test:    If True, we are trying to determine the collimation parameters, so ignore 'b' parameter.
         plot:    If True, save a plot of the best fit collimation.
         cmd:     command handler
-        moveMotors: If True, actually apply the calculated specMech moves.
         """
 
         self.test = test
@@ -560,7 +560,7 @@ class Hartmann(object):
 
         docams = ['r1','r2','b1','b2']
         try:
-            self._collimate(expnum1, expnum2, indir, moveMotors, docams)
+            self._collimate(expnum1, expnum2, indir, docams)
         except Exception as e:
             self.success = False
             self.cmd.error('text="Collimation calculation failed! %s"'%e)
@@ -569,7 +569,7 @@ class Hartmann(object):
             for spec in specs:
                 self._mean_moves(spec)
             if plot:
-               self.make_plot(expnum1,expnum2)
+                self.make_plot(expnum1,expnum2)
     #...
     
     def take_hartmanns(self,subFrame):
@@ -615,14 +615,21 @@ class Hartmann(object):
             self.success = False
         msglvl('%sResiduals=%d,%.1f,%s'%(spec,rres,bres,resid))
         self.cmd.inform('%sAverageMove=%d'%(spec,avg))
+        self.moves[spec] = avg
+    
+    def move_motors(self):
+        """Apply computed collimator piston moves."""
+        update_status(self.cmd, 'moving')
+        for spec,piston in self.moves.items():
+            self._move_motor(spec,piston)
 
-    def move_motors(self, spec, piston):
+    def _move_motor(self, spec, piston):
         """Apply a collimator piston move to spectrograph spec."""
         if piston == 0:
             self.cmd.respond('text="no recommended piston change for %s"' % (spec))
         timeLim = 30.0
         cmdVar = self.actor.cmdr.call(actor='boss', forUserCmd=self.cmd,
-                                      cmdStr="moveColl spec=%s piston=%s" % (spec, piston),
+                                      cmdStr="moveColl spec=%s piston=%d" % (spec, piston),
                                       timeLim=timeLim)
         if cmdVar.didFail:
             raise HartError('Failed to move collimator pistons.')
