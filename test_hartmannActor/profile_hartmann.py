@@ -12,10 +12,10 @@ from hartmannActor import boss_collimate, hartmannActor_main
 
 config = ConfigParser.ConfigParser()
 config.read('../etc/hartmann.cfg')
-m,b = hartmannActor_main.get_collimation_constants(config)
+m,b,constants,coeff = hartmannActor_main.get_collimation_constants(config)
 
 cmd = TestHelper.Cmd(verbose=True)
-hart = boss_collimate.Hartmann(None, m, b)
+hart = boss_collimate.Hartmann(None, m, b, constants, coeff)
 hart.spec = 'sp1'
 hart.cmd = cmd
 

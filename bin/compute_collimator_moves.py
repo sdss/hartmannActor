@@ -72,7 +72,7 @@ def main(argv=None):
 
     hart = boss_collimate.Hartmann(None, m, b, constants, coeff)
 
-    hart.collimate(expnum1, indir=indir, mjd=mjd, cmd=cmd, moveMotors=False, plot=True)
+    hart.collimate(expnum1, indir=indir, mjd=mjd, cmd=cmd, plot=True)
 
 
 if __name__ == '__main__':
