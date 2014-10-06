@@ -36,7 +36,7 @@ print 'Profiling single oneCam __call__()'
 print '----------------------------------'
 # Now profile a single OneCam call, to see what happens in the guts of it.
 prof = cProfile.Profile()
-oneCam = boss_collimate.OneCam(cmd, m, b, 292, 165006, 165007, 'data/')
+oneCam = boss_collimate.OneCam(m, b, constants['bsteps'], constants['focustol'], coeff, 183069, 183069, '/data/spectro/56896')
 prof.runcall(oneCam, 'r2')
 prof.dump_stats('oneCam.prof')
 p = pstats.Stats('oneCam.prof')
@@ -44,6 +44,6 @@ p.strip_dirs()
 p.sort_stats('time').print_stats(10)
 
 t1 = time.time()
-hart.collimate(165006, indir='data/', cmd=cmd, moveMotors=False)
+hart.collimate(183069, mjd=56896, cmd=cmd)
 t2 = time.time()
 print 'time:',t2-t1

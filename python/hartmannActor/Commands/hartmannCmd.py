@@ -12,6 +12,7 @@ import opscore.protocols.types as types
 import RO.Astro.Tm.MJDFromPyTuple as astroMJD
 
 import hartmannActor.myGlobals as myGlobals
+from hartmannActor import boss_collimate
 
 class hartmannCmd(object):
     '''Wrap commands to the hartmann actor'''
@@ -68,6 +69,7 @@ class hartmannCmd(object):
         if hartmann.success and moveMotors:
             hartmann.move_motors()
         
+        boss_collimate.update_status(cmd, 'idle')
         if hartmann.success:
             cmd.finish()
         else:
