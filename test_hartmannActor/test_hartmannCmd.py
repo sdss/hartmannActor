@@ -16,6 +16,7 @@ class FakeHartmann():
     """Fake calls to the Hartmann class, with either success or failure."""
     def __init__(self, success):
         self.success = success
+        self.moved = False
     def reinit(self):
         pass
     def __call__(self, cmd, **kwargs):
@@ -26,6 +27,9 @@ class FakeHartmann():
         self.expnum1 = expnum1
         self.kwargs = kwargs
         return self.success
+    def move_motors(self):
+        self.moved = True
+        return True
 
 class HartmannCmdTester(hartmannTester.HartmannTester):
     def setUp(self):
@@ -58,7 +62,7 @@ class TestHartmannCmd(HartmannCmdTester,unittest.TestCase):
         self.assertEqual(hart.expnum1,expect['expnum1'])
         self.assertEqual(hart.kwargs['expnum2'],expect.get('expnum2'))
         self.assertEqual(hart.kwargs['mjd'],expect.get('mjd'))
-        self.assertEqual(hart.kwargs['moveMotors'],expect.get('moveMotors',True))
+        self.assertEqual(hart.moved,expect.get('moveMotors',True))
     def test_recompute_ok(self):
         expect = {'expnum1':1, 'mjd':12345}
         self._recompute('id={expnum1} mjd={mjd}'.format(**expect), expect, success=True)
@@ -67,7 +71,7 @@ class TestHartmannCmd(HartmannCmdTester,unittest.TestCase):
         expect = {'expnum1':3, 'mjd':currentMJD, 'moveMotors':False}
         self._recompute('id={expnum1} noCorrect'.format(**expect), expect, success=True)
     def test_recompute_fails(self):
-        expect = {'expnum1':1, 'expnum2':5, 'mjd':12345}
+        expect = {'expnum1':1, 'expnum2':5, 'mjd':12345, 'moveMotors':False}
         self._recompute('id={expnum1} id2={expnum2} mjd={mjd}'.format(**expect), expect, success=False)
 
     def _collimate(self, args, expect, success=True):

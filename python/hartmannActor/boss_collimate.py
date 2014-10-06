@@ -35,7 +35,6 @@ the Hartmann-r exposure by in Y to agree with the Hartmann-l exposure.
 
 import os.path
 from multiprocessing import Pool
-import time
 
 try:
     fitsio = True
@@ -51,7 +50,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-import RO.Astro.Tm.MJDFromPyTuple as astroMJD
+from sdss.utilities import astrodatetime
 
 import hartmannActor.myGlobals as myGlobals
 
@@ -473,7 +472,7 @@ class Hartmann(object):
             # Perform the collimation calculations
             self.collimate(exposureId[0],exposureId[1],plot=plot)
             if self.success and moveMotors:
-                self.move_motors()
+                self._move_motors()
         except HartError as e:
             self.cmd.error('text="%s"'%e)
             self.success = False
@@ -500,7 +499,7 @@ class Hartmann(object):
 
     def _collimate(self, expnum1, expnum2, indir, docams):
         """The guts of the collimation, to be wrapped in a try:except block."""
-        # pool = ThreadPool(len(docams))
+        # pool = ThreadPool(len(docams)) # NOTE: for testing with threads instead of processes
         pool = Pool(len(docams))
         oneCam = OneCam(self.m, self.b, self.bsteps, self.focustol, self.coeff,
                         expnum1, expnum2, indir)
@@ -594,7 +593,7 @@ class Hartmann(object):
             # NOTE: exposureId is a lagging indicator.
             exposureId += 1
             exposureIds.append(exposureId)
-            self.mjd = int(astroMJD.mjdFromPyTuple(time.gmtime())+0.3)
+            self.mjd = int(astrodatetime.datetime.utcnow().sdssjd)
             self.cmd.inform('text="got hartmann %s exposure %d"' % (side, exposureId))
         return exposureIds
 
@@ -618,6 +617,18 @@ class Hartmann(object):
         self.moves[spec] = avg
     
     def move_motors(self):
+        """Apply computed collimator piston moves, in an exception-safe manner."""
+        try:
+            self._move_motors()
+        except HartError as e:
+            self.cmd.error('text="%s"'%e)
+            self.success = False
+        except Exception as e:
+            self.cmd.error('text="Unhandled Exception when processing Hartmanns!"')
+            self.cmd.error('text="%s"'%e)
+            self.success = False
+
+    def _move_motors(self):
         """Apply computed collimator piston moves."""
         update_status(self.cmd, 'moving')
         for spec,piston in self.moves.items():
@@ -627,12 +638,16 @@ class Hartmann(object):
         """Apply a collimator piston move to spectrograph spec."""
         if piston == 0:
             self.cmd.respond('text="no recommended piston change for %s"' % (spec))
+            return
         timeLim = 30.0
         cmdVar = self.actor.cmdr.call(actor='boss', forUserCmd=self.cmd,
                                       cmdStr="moveColl spec=%s piston=%d" % (spec, piston),
                                       timeLim=timeLim)
         if cmdVar.didFail:
-            raise HartError('Failed to move collimator pistons.')
+            errMsg = 'Failed to move collimator pistons for %s.'%spec
+            if 'Timeout' in cmdVar.lastReply.keywords:
+                errMsg = ' '.join((errMsg, 'Command timed out'))
+            raise HartError(errMsg)
 
     def _get_inset_range(result, ibest, xshift):
         """Get the xrange of the inset plot."""

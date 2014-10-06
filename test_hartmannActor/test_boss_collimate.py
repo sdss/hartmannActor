@@ -14,9 +14,6 @@ import hartmannTester
 from hartmannActor import hartmannActor_main
 from hartmannActor import boss_collimate
 
-def get_mjd(filename):
-    return int(filename.split('/')[2])
-
 def get_expnum(filename):
     """Return the exposure number from this filename."""
     return int(filename.split('-')[-1].split('.')[0])
@@ -210,16 +207,20 @@ class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
     def test_move_motor(self):
         self.hart._move_motor('sp2', 10)
         self._check_cmd(1,0,0,0,False)
+    def test_move_motor_0_piston(self):
+        self.hart._move_motor('sp2', 0)
+        self._check_cmd(0,1,0,0,False)
+
     def test_move_motor_fails(self):
         self.cmd.failOn = 'boss moveColl spec=sp2 piston=20'
         with self.assertRaises(boss_collimate.HartError) as cm:
             self.hart._move_motor('sp2', 20)
-        self.assertIn('Failed to move collimator pistons', cm.exception.message)
+        self.assertIn('Failed to move collimator pistons for sp2', cm.exception.message)
         self._check_cmd(1,0,0,0,False)
 
     def test_move_motors(self):
         self.hart.moves = {'sp1':100, 'sp2':200}
-        self.hart.move_motors()
+        self.hart._move_motors()
         self._check_cmd(2,1,0,0,False)
 
     def _take_hartmanns(self,nCalls,nInfo,nWarn,nErr, expect):

@@ -1,10 +1,16 @@
 [test_move_motor]
 boss moveColl spec=sp2 piston=10
 
+[test_move_motor_0_piston]
+
 [test_move_motor_fails]
 boss moveColl spec=sp2 piston=20
 
 [test_move_motors]
+boss moveColl spec=sp1 piston=100
+boss moveColl spec=sp2 piston=200
+
+[test_move_motors_fails]
 boss moveColl spec=sp1 piston=100
 boss moveColl spec=sp2 piston=200
 

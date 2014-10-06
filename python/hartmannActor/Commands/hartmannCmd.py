@@ -8,7 +8,6 @@ import time
 
 import opscore.protocols.keys as keys
 import opscore.protocols.types as types
-from opscore.utility.qstr import qstr
 
 import RO.Astro.Tm.MJDFromPyTuple as astroMJD
 
