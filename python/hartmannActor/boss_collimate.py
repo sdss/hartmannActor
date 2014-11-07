@@ -454,7 +454,7 @@ class Hartmann(object):
         # Can't use update_status here, as we don't necessarily have a cmd available.
         myGlobals.hartmannStatus = 'initialized'
 
-    def __call__(self, cmd, moveMotors=False, subFrame=True, plot=False):
+    def __call__(self, cmd, moveMotors=False, subFrame=True, ignoreResiduals=False, plot=False):
         """
         Take and reduce a pair of hartmann exposures.
         Usually apply the recommended collimator moves.
@@ -462,6 +462,7 @@ class Hartmann(object):
         cmd is the currently active Commander instance, for passing info/warn messages.
         if moveMotors is set, apply the computed corrections.
         if subFrame is set, only readout a part of the chip.
+        if ignoreResiduals is set, apply red moves regardless of resulting blue residuals.")
         if plot is set, make a plot representing the calculation.
         """
         self.cmd = cmd
@@ -470,7 +471,7 @@ class Hartmann(object):
             # take the hartmann frames.
             exposureId = self.take_hartmanns(subFrame)
             # Perform the collimation calculations
-            self.collimate(exposureId[0],exposureId[1],plot=plot)
+            self.collimate(exposureId[0], exposureId[1], ignoreResiduals=ignoreResiduals, plot=plot)
             if self.success and moveMotors:
                 self._move_motors()
         except HartError as e:
@@ -517,7 +518,7 @@ class Hartmann(object):
 
     def collimate(self, expnum1, expnum2=None, indir=None, mjd=None,
                   specs=['sp1','sp2'],docams1=['b1','r1'],docams2=['b2','r2'],
-                  test=False, plot=False, cmd=None):
+                  test=False, ignoreResiduals=False, plot=False, cmd=None):
         """
         Compute the spectrograph collimation focus from Hartmann mask exposures.
         
@@ -529,6 +530,7 @@ class Hartmann(object):
         docams1: camera(s) in sp1 to collimate ('b1','r1',['b1','r1'])
         docams2: camera(s) in sp2 to collimate ('b2','r2',['b2','r2'])
         test:    If True, we are trying to determine the collimation parameters, so ignore 'b' parameter.
+        ignoreResiduals: apply red moves even if blue residuals are too high.
         plot:    If True, save a plot of the best fit collimation.
         cmd:     command handler
         """
@@ -566,7 +568,7 @@ class Hartmann(object):
             return
         else:
             for spec in specs:
-                self._mean_moves(spec)
+                self._mean_moves(spec, ignoreResiduals=ignoreResiduals)
             if plot:
                 self.make_plot(expnum1,expnum2)
     #...
@@ -597,7 +599,7 @@ class Hartmann(object):
             self.cmd.inform('text="got hartmann %s exposure %d"' % (side, exposureId))
         return exposureIds
 
-    def _mean_moves(self, spec):
+    def _mean_moves(self, spec, ignoreResiduals=False):
         """Compute the mean movement and residuals for this spectrograph,
         after r&b moves have been determined."""
 
@@ -608,6 +610,9 @@ class Hartmann(object):
         if abs(bres) < self.badres:
             resid = '"OK"'
             msglvl = self.cmd.inform
+        elif ignoreResiduals:
+            resid = '"Move blue ring %.1f degrees."'%(bres*2)
+            msglvl = self.cmd.warn
         else:
             resid = '"Bad angle: move blue ring %.1f degrees then rerun gotoField with Hartmanns checked."'%(bres*2)
             msglvl = self.cmd.warn

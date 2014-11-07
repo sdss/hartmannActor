@@ -81,6 +81,7 @@ class TestHartmannCmd(HartmannCmdTester,unittest.TestCase):
         self._check_cmd(0,0,0,0, True, not success)
         self.assertEqual(hart.kwargs['moveMotors'],expect.get('moveMotors',True))
         self.assertEqual(hart.kwargs['subFrame'],expect.get('subFrame',True))
+        self.assertEqual(hart.kwargs['ignoreResiduals'],expect.get('ignoreResiduals',False))
     def test_collimate_ok(self):
         expect = {}
         self._collimate('', expect, success=True)
@@ -90,8 +91,13 @@ class TestHartmannCmd(HartmannCmdTester,unittest.TestCase):
     def test_collimate_fails(self):
         expect = {}
         self._collimate('', expect, success=False)
-
-
+    def test_ignoreResiduals(self):
+        expect = {'ignoreResiduals':True, 'moveMotors':True}
+        self._collimate('ignoreResiduals', expect, success=True)
+    def test_ignoreResiduals_moveMotors_collide(self):
+        args = 'ignoreResiduals noCorrect'
+        self._run_cmd('collimate %s'%args, None)
+        self._check_cmd(0,0,0,0, True, True)
 
 if __name__ == '__main__':
     verbosity = 2

@@ -28,12 +28,13 @@ class hartmannCmd(object):
                                         keys.Key("mjd", types.Int(), help="MJD of the Hartmann pair to process (default: current MJD)."),
                                         keys.Key("noCorrect", help="if set, do not apply any recommended corrections."),
                                         keys.Key("noSubframe", help="if set, take fullframe images."),
+                                        keys.Key("ignoreResiduals", help="if set, apply red moves regardless of resulting blue residuals.")
                                         )
 
         self.vocab = [
             ('ping', '', self.ping),
             ('status', '', self.status),
-            ('collimate', '[noCorrect] [noSubframe]', self.collimate),
+            ('collimate', '[noCorrect] [noSubframe] [ignoreResiduals]', self.collimate),
             ('recompute', '<id> [<id2>] [<mjd>] [noCorrect]', self.recompute),
         ]
 
@@ -83,9 +84,14 @@ class hartmannCmd(object):
         hartmann = myGlobals.hartmann
         moveMotors = "noCorrect" not in cmd.cmd.keywords
         subFrame = "noSubframe" not in cmd.cmd.keywords
+        ignoreResiduals = "ignoreResiduals" in cmd.cmd.keywords
         
+        if ignoreResiduals and not moveMotors:
+            cmd.fail('text=ignoreResiduals and noCorrect are mutually exclusive!')
+            return
+
         hartmann.reinit()
-        hartmann(cmd, moveMotors=moveMotors, subFrame=subFrame)
+        hartmann(cmd, moveMotors=moveMotors, subFrame=subFrame, ignoreResiduals=ignoreResiduals)
         if hartmann.success:
             cmd.finish()
         else:
