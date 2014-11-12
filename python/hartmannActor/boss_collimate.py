@@ -505,14 +505,20 @@ class Hartmann(object):
                 mdict[msg[0]](msg[1])
 
     def file_waiter(self, files):
-        """Wait until all files exist, or 8 seconds have passed."""
+        """
+        Wait until all files exist, or 8 seconds have passed.
+        Return None if all files exist, or the files that weren't found.
+        """
         counter = 0
-        while counter < 8:
-            time.sleep(0.5)
-            if all([os.path.exists(f) for f in files]):
-                return True
+        wait = 0.5 # seconds
+        # Fail after 12 seconds, so scale by wait time.
+        while counter <= 12/wait:
+            time.sleep(wait)
+            test = [os.path.exists(f) for f in files]
+            if all(test):
+                return None
             counter += 1
-        return False
+        return [files[i] for i,x in enumerate(test) if not x]
 
     def _collimate(self, expnum1, expnum2, indir, docams):
         """The guts of the collimation, to be wrapped in a try:except block."""
@@ -565,8 +571,9 @@ class Hartmann(object):
         update_status(self.cmd, 'waiting on files')
         files1 = [get_filename(indir,'%s%d'%(s,n),expnum1) for s in ['b','r'] for n in [1,2]]
         files2 = [get_filename(indir,'%s%d'%(s,n),expnum2) for s in ['b','r'] for n in [1,2]]
-        if not self.file_waiter(files1+files2):
-            raise HartError("Cannot complete collimation: not all files were found!")
+        files_missing = self.file_waiter(files1+files2)
+        if files_missing is not None:
+            raise HartError("Cannot complete collimation, these files not found: %s"%','.join(files_missing))
 
         update_status(self.cmd, 'processing')
 
