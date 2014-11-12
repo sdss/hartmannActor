@@ -34,6 +34,7 @@ the Hartmann-r exposure by in Y to agree with the Hartmann-l exposure.
 # IDL->Python verson by John Parejko
 
 import os.path
+import time
 from multiprocessing import Pool
 
 try:
@@ -50,6 +51,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
+from opscore.utility.qstr import qstr
 from sdss.utilities import astrodatetime
 
 import hartmannActor.myGlobals as myGlobals
@@ -62,7 +64,13 @@ class HartError(Exception):
 def update_status(cmd, status):
     """update the global status value, and output the status keyword."""
     myGlobals.hartmannStatus = status
-    cmd.inform('status=%s'%status)
+    cmd.inform('status=%s'%qstr(status))
+
+def get_filename(indir, cam, expnum):
+    """Return a full path to the the desired exposure."""
+    basename = 'sdR-%s-%08d.fit.gz'
+    return os.path.join(indir,basename%(cam,expnum))
+
 
 class OneCamResult(object):
     """
@@ -92,8 +100,6 @@ class OneCam(object):
         self.expnum1 = expnum1
         self.expnum2 = expnum2
 
-        # A pattern for the filenames that we can format for the full name.
-        self.basename = 'sdR-%s-%08d.fit.gz'
 
         # allowable focus tolerance (pixels): if offset is less than this, we're in focus.
         self.focustol = focustol
@@ -236,12 +242,12 @@ class OneCam(object):
         
         return isBad
     
-    def _load_data(self,indir,expnum1,expnum2):
+    def _load_data(self, indir, expnum1, expnum2):
         """
         Read in the two images, and check that headers are reasonable.
         Sets self.bigimg[1,2] and returns True if everything is ok, else return False."""
-        filename1 = os.path.join(indir,self.basename%(self.cam,expnum1))
-        filename2 = os.path.join(indir,self.basename%(self.cam,expnum2))
+        filename1 = get_filename(indir, self.cam, expnum1)
+        filename2 = get_filename(indir, self.cam, expnum2)
         if not os.path.exists(filename1) and not os.path.exists(filename2):
             raise HartError("All files not found: %s, %s!"%(filename1,filename2))
         
@@ -498,6 +504,16 @@ class Hartmann(object):
             for msg in cam_result.messages:
                 mdict[msg[0]](msg[1])
 
+    def file_waiter(self, files):
+        """Wait until all files exist, or 8 seconds have passed."""
+        counter = 0
+        while counter < 8:
+            time.sleep(0.5)
+            if all([os.path.exists(f) for f in files]):
+                return True
+            counter += 1
+        return False
+
     def _collimate(self, expnum1, expnum2, indir, docams):
         """The guts of the collimation, to be wrapped in a try:except block."""
         # pool = ThreadPool(len(docams)) # NOTE: for testing with threads instead of processes
@@ -545,6 +561,12 @@ class Hartmann(object):
             self.mjd = mjd
         if indir is None:
             indir = os.path.join(self.data_root_dir,str(self.mjd))
+
+        update_status(self.cmd, 'waiting on files')
+        files1 = [get_filename(indir,'%s%d'%(s,n),expnum1) for s in ['b','r'] for n in [1,2]]
+        files2 = [get_filename(indir,'%s%d'%(s,n),expnum2) for s in ['b','r'] for n in [1,2]]
+        if not self.file_waiter(files1+files2):
+            raise HartError("Cannot complete collimation: not all files were found!")
 
         update_status(self.cmd, 'processing')
 
