@@ -298,7 +298,7 @@ class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
         exp1 = get_expnum(focused1)
         self.hart.collimate(exp1,indir=focused_dir,cmd=self.cmd,plot=True)
         self.assertTrue(self.hart.success)
-        self._check_cmd(0,12,1,0,False)
+        self._check_cmd(0,13,1,0,False)
         self.assertEqual(self.hart.result, focused_pistons)
         self.assertEqual(self.hart.moves, focused_moves)
         for cam in self.hart.full_result:
@@ -310,7 +310,7 @@ class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
         exp2 = get_expnum(notFocused2)
         self.hart.collimate(exp1,exp2,indir=focused_dir,cmd=self.cmd,plot=True)
         self.assertTrue(self.hart.success)
-        self._check_cmd(0,10,3,0,False)
+        self._check_cmd(0,11,3,0,False)
         self.assertEqual(self.hart.result, notFocused_pistons)
         self.assertEqual(self.hart.moves, notFocused_moves)
         for cam in self.hart.full_result:
