@@ -30,14 +30,15 @@ def get_config_constants():
 
 
 # ########################################
-# NOTE:
+# NOTE: see https://trac.sdss.org/wiki/APO/UpdateHartmannCoeff for more.
+#
 # When the collimation parameters are updated in hartmann.cfg, please update
 # the focused/notFocused directory, files, and piston/focused/moves values
 # to match what has been computed as the "correct" values.
 #
 # Please pick at least two files to test on, one that is mostly in focus, and one
 # that is mostly not in focus. A third that requires a blue ring move would
-# also be useful for completeness. If the focused is 3in/1out and 
+# also be useful for completeness. If the focused is 3in/1out and
 # notFocused is 3out/1in, you won't have to change the check_call test
 # in test_collimate_[not]focused().
 # ########################################
@@ -58,7 +59,7 @@ notFocused_moves = {'sp1':-889, 'sp2':-1671}
 
 
 # Note: to take sample test exposures, you can't use flavor "science",
-# because that closes the screen, unless you alsof specify "hartmann=left/right"
+# because that closes the screen, unless you also specify "hartmann=left/right"
 # It's best to take these as "boss exposure arc"
 data_dir = 'data/'
 
