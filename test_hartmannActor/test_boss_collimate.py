@@ -42,19 +42,18 @@ def get_config_constants():
 # notFocused is 3out/1in, you won't have to change the check_call test
 # in test_collimate_[not]focused().
 # ########################################
+focused_dir = '/data/spectro/56912'
+focused1 = 'sdR-b1-00184496.fit.gz'
+focused2 = 'sdR-b1-00184497.fit.gz'
+focused_pistons = {'sp1':{'b':int(-638),'r':3628},'sp2':{'b':int(-1244),'r':1578}}
+focused_focused = {'sp1':{'b':True,'r':False},'sp2':{'b':True,'r':False}}
+focused_moves = {'sp1':1493, 'sp2':159}
 
-focused_dir = '/data/spectro/56896'
-focused1 = 'sdR-b1-00183069.fit.gz'
-focused2 = 'sdR-b1-00183070.fit.gz'
-focused_pistons = {'sp1':{'b':int(-1.6*319.0),'r':1319},'sp2':{'b':int(-1.5*319.0),'r':-315}}
-focused_focused = {'sp1':{'b':True,'r':False},'sp2':{'b':True,'r':True}}
-focused_moves = {'sp1':-402, 'sp2':-409}
-
-notFocused1 = 'sdR-b1-00183065.fit.gz'
-notFocused2 = 'sdR-b1-00183066.fit.gz'
-notFocused_pistons = {'sp1':{'b':int(-5.6*319.0),'r':0},'sp2':{'b':int(-5.5*319.0),'r':-1577}}
-notFocused_focused = {'sp1':{'b':False,'r':True},'sp2':{'b':False,'r':False}}
-notFocused_moves = {'sp1':-889, 'sp2':-1671}
+notFocused1 = 'sdR-b1-00184450.fit.gz'
+notFocused2 = 'sdR-b1-00184451.fit.gz'
+notFocused_pistons = {'sp1':{'b':int(-3828),'r':0},'sp2':{'b':int(-4466),'r':-1577}}
+notFocused_focused = {'sp1':{'b':False,'r':True},'sp2':{'b':False,'r':True}}
+notFocused_moves = {'sp1':-1914, 'sp2':-3027}
 # ########################################
 
 
