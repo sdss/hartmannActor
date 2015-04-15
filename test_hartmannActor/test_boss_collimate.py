@@ -57,18 +57,17 @@ notFocused_moves = {'sp1':-1914, 'sp2':-3027}
 # ########################################
 
 
+# Precooked test exposures to test the checks of header parameters.
 # Note: to take sample test exposures, you can't use flavor "science",
 # because that closes the screen, unless you also specify "hartmann=left/right"
-# It's best to take these as "boss exposure arc"
+# It's best to take these as "boss exposure arc".
 data_dir = 'data/'
-
 NeOff1 = 'sdR-r2-00169558.fit.gz'
 NeOff2 = 'sdR-r2-00169559.fit.gz'
 HgCdOff1 = 'sdR-r2-00169560.fit.gz'
 HgCdOff2 = 'sdR-r2-00169561.fit.gz'
 bothOff1 = 'sdR-r2-00169562.fit.gz'
 bothOff2 = 'sdR-r2-00169563.fit.gz'
-
 maskOut1 = 'sdR-r2-00169556.fit.gz'
 maskOut2 = 'sdR-r2-00169557.fit.gz'
 bothLeft1 = 'sdR-r2-00169552.fit.gz'
@@ -76,9 +75,13 @@ bothLeft2 = 'sdR-r2-00169553.fit.gz'
 bothRight1 = 'sdR-r2-00169554.fit.gz'
 bothRight2 = 'sdR-r2-00169555.fit.gz'
 
+# TBD: be nice to have files with these conditions for oneCam.bad_header()
 noFFS = None
-
 notHartmann = None
+
+# exposures with no light in them, see ticket #2304.
+noLight1 = '/data/spectro/57081/sdR-r2-195564.fit.gz'
+noLight2 = '/data/spectro/57081/sdR-r2-195565.fit.gz'
 
 
 # pre-cooked results for plotting without doing any computation.
@@ -123,11 +126,13 @@ class TestOneCam(hartmannTester.HartmannTester, unittest.TestCase):
         header = pyfits.getheader(os.path.join(focused_dir,focused1))
         self._bad_header(header, False, 0)
     def test_bad_header_noNe(self):
-        header = pyfits.getheader(data_dir + NeOff1)
+        header = pyfits.getheader(
+                                  data_dir + NeOff1)
         self._bad_header(header, True, 1)
     def test_bad_header_noHgcd(self):
         header = pyfits.getheader(data_dir + HgCdOff1)
         self._bad_header(header, True, 1)
+        
     def test_bad_header_noLamps(self):
         header = pyfits.getheader(data_dir + bothOff1)
         self._bad_header(header, True, 2)
@@ -188,6 +193,27 @@ class TestOneCam(hartmannTester.HartmannTester, unittest.TestCase):
         expnum1 = get_expnum(maskOut1)
         expnum2 = get_expnum(maskOut2)
         self._load_data_not_ok(expnum1, expnum2, 0, 'FITS headers do not indicate these are Hartmann exposures.')
+
+    def _check_image_noLight(self,cam):
+        self.oneCam.cam = cam
+        errMsg = 'THERE DOES NOT APPEAR TO BE ANY LIGHT FROM THE ARCS IN %s'%cam
+        expnum1 = get_expnum(noLight1)
+        expnum2 = get_expnum(noLight2)
+        indir = os.path.dirname(noLight1)
+        self.oneCam._load_data(indir, expnum1, expnum2)
+        self.oneCam._do_gain_bias()
+        with self.assertRaises(boss_collimate.HartError) as cm:
+            self.oneCam._check_images()
+        self.assertIn(errMsg, cm.exception.message)
+        self.assertEqual(len(self.oneCam.messages),1)
+    def test_check_image_noLight_b1(self):
+        self._check_image_noLight('b1')
+    def test_check_image_noLight_b2(self):
+        self._check_image_noLight('b2')
+    def test_check_image_noLight_r1(self):
+        self._check_image_noLight('r1')
+    def test_check_image_noLight_r2(self):
+        self._check_image_noLight('r2')
 
     def test_call_bad_cam(self):
         self.oneCam('notACam')
@@ -328,7 +354,8 @@ if __name__ == '__main__':
     verbosity = 2
 
     suite = None
-    # suite = unittest.TestLoader().loadTestsFromName('test_boss_collimate.TestHartmann.test_make_plot_notFocused')
+    #suite = unittest.TestLoader().loadTestsFromName('test_boss_collimate.TestHartmann.test_make_plot_notFocused')
+    suite = unittest.TestLoader().loadTestsFromName('test_boss_collimate.TestOneCam.test_check_image_noLight_r1')
     if suite:
         unittest.TextTestRunner(verbosity=verbosity).run(suite)
     else:

@@ -314,6 +314,7 @@ class OneCam(object):
     def _check_images(self):
         """Check that there is actually light in the images."""
         img1 = self.bigimg1[self.region]
+        img2 = self.bigimg2[self.region]
         # find the variance near bright lines
         # ddof=1 for consistency with IDL's variance() which has denominator (N-1)
 
@@ -322,7 +323,7 @@ class OneCam(object):
             var = np.var(img1[300:450,:],ddof=1)
         else:
             var = np.var(img1[0:150,:],ddof=1)
-       # check that the camera is capturing light by requiring variance greater than 100
+        # check that the camera is capturing light by requiring variance greater than 100
         if var < 100:
             raise HartError("THERE DOES NOT APPEAR TO BE ANY LIGHT FROM THE ARCS IN %s!!!"%self.cam)
     #...
