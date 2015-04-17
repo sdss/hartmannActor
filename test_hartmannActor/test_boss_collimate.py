@@ -205,7 +205,6 @@ class TestOneCam(hartmannTester.HartmannTester, unittest.TestCase):
         with self.assertRaises(boss_collimate.HartError) as cm:
             self.oneCam._check_images()
         self.assertIn(errMsg, cm.exception.message)
-        self.assertEqual(len(self.oneCam.messages),1)
     def test_check_image_noLight_b1(self):
         self._check_image_noLight('b1')
     def test_check_image_noLight_b2(self):
@@ -355,7 +354,7 @@ if __name__ == '__main__':
 
     suite = None
     #suite = unittest.TestLoader().loadTestsFromName('test_boss_collimate.TestHartmann.test_make_plot_notFocused')
-    suite = unittest.TestLoader().loadTestsFromName('test_boss_collimate.TestOneCam.test_check_image_noLight_r1')
+    # suite = unittest.TestLoader().loadTestsFromName('test_boss_collimate.TestOneCam.test_check_image_noLight_b2')
     if suite:
         unittest.TextTestRunner(verbosity=verbosity).run(suite)
     else:

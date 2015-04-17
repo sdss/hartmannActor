@@ -131,13 +131,13 @@ class OneCam(object):
         # we don't want to use them, as the arc lamp might not be warm yet.
         self.region = np.s_[850:1301,1500:2501]
         
-        self.bias_slice = [np.s_[950:1338,10:100],np.s_[950:1338,4250:4340]]
+        self.bias_slice = [np.s_[950:1339,10:101],np.s_[950:1339,4250:4341]]
         self.cam_gains = {'b1':[1.048, 1.048, 1.018, 1.006], 'b2':[1.040, 0.994, 1.002, 1.010],
                           'r1':[1.966, 1.566, 1.542, 1.546], 'r2':[1.598, 1.656, 1.582, 1.594]}
-        self.gain_slice = {'b':[[np.s_[0:2055,0:2047],np.s_[56:2111,128:2175]],
-                                [np.s_[0:2055,2048:4095],np.s_[56:2111,2176:4223]]],
-                           'r':[[np.s_[0:2063,0:2056],np.s_[48:2111,119:2175]],
-                                [np.s_[0:2063,2057:4113],np.s_[48:2111,2176:4232]]],}
+        self.gain_slice = {'b':[[np.s_[0:2056,0:2048],np.s_[56:2112,128:2176]],
+                                [np.s_[0:2056,2048:4096],np.s_[56:2112,2176:4224]]],
+                           'r':[[np.s_[0:2064,0:2057],np.s_[48:2112,119:2176]],
+                                [np.s_[0:2064,2057:4114],np.s_[48:2112,2176:4233]]],}
         
         # Did everything work?
         self.success = True
@@ -313,18 +313,27 @@ class OneCam(object):
 
     def _check_images(self):
         """Check that there is actually light in the images."""
-        img1 = self.bigimg1[self.region]
-        img2 = self.bigimg2[self.region]
-        # find the variance near bright lines
-        # ddof=1 for consistency with IDL's variance() which has denominator (N-1)
+        # The core of the idea here is to find the variance of a region with
+        # several bright lines. Low variance means no light.
+        # However, we also have to ensure we aren't thrown off by a few strong
+        # cosmic rays or several bright pixels.
+        # So, we clip all values > 1000 to 1000 before we compute the variance,
+        # to reduce the impact of a handful of bright pixels.
+        img1 = self.bigimg1[self.region].copy()
+        img2 = self.bigimg2[self.region].copy()
+        img1[img1 > 1000] = 1000
+        img2[img2 > 1000] = 1000
 
-        # NOTE: TBD: need to compare this with any new choices for subFrame.
+        # ddof=1 for consistency with IDL's variance() which has denominator (N-1)
+        # NOTE: need to keep r&b slices in sync with subFrame changes.
         if 'b' in self.cam:
-            var = np.var(img1[300:450,:],ddof=1)
+            var1 = np.var(img1[300:450,:],ddof=1)
+            var2 = np.var(img2[300:450,:],ddof=1)
         else:
-            var = np.var(img1[0:150,:],ddof=1)
-        # check that the camera is capturing light by requiring variance greater than 100
-        if var < 100:
+            var1 = np.var(img1[0:150,:],ddof=1)
+            var2 = np.var(img2[0:150,:],ddof=1)
+
+        if var1 < 100 or var2 < 100:
             raise HartError("THERE DOES NOT APPEAR TO BE ANY LIGHT FROM THE ARCS IN %s!!!"%self.cam)
     #...
 
