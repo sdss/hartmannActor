@@ -39,6 +39,8 @@ def main(argv=None):
                         help='tolerance for bad residual on blue ring')
     parser.add_argument('--coeff', default=None, dest='coeff', nargs=4, type=float,
                         help='"funny fudge factors": b1 r1 b2 r2.')
+    parser.add_argument('--noCheckImage', dest='noCheckImage', action='store_true',
+                        help="Don't perform variance calculation for missing light.")
 
     args = parser.parse_args()
 
@@ -72,7 +74,7 @@ def main(argv=None):
 
     hart = boss_collimate.Hartmann(None, m, b, constants, coeff)
 
-    hart.collimate(expnum1, indir=indir, mjd=mjd, cmd=cmd, plot=True)
+    hart.collimate(expnum1, indir=indir, mjd=mjd, cmd=cmd, plot=True, noCheckImage=args.noCheckImage)
 
 
 if __name__ == '__main__':
