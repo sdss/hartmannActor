@@ -83,6 +83,9 @@ notHartmann = None
 noLight1 = '/data/spectro/57081/sdR-r2-195564.fit.gz'
 noLight2 = '/data/spectro/57081/sdR-r2-195565.fit.gz'
 
+# Sparse plugged exposures
+sparsePlug1 = '/data/spectro/57258/sdR-r2-202979.fit.gz'
+sparsePlug2 = '/data/spectro/57258/sdR-r2-202980.fit.gz'
 
 # pre-cooked results for plotting without doing any computation.
 xshift = -2 + 0.5 * np.arange(80,dtype='f8')
@@ -216,18 +219,18 @@ class TestOneCam(hartmannTester.HartmannTester, unittest.TestCase):
 
     def test_noCheckImage(self):
         """Should not raise a HartError; opposite of the noLight tests."""
-        self.oneCam.expnum1 = get_expnum(noLight1)
-        self.oneCam.expnum2 = get_expnum(noLight2)
-        self.oneCam.indir = os.path.dirname(noLight1)
-        self.oneCam.noCheckImage = False
+        expnum1 = get_expnum(sparsePlug1)
+        expnum2 = get_expnum(sparsePlug2)
+        indir = os.path.dirname(sparsePlug1)
+        m,b,constants,coeff = get_config_constants()
+        self.oneCam = boss_collimate.OneCam(m, b, constants['bsteps'], constants['focustol'], coeff, expnum1, expnum2, indir, noCheckImage=True)
         result = self.oneCam('b1')
-        print result.success, result.messages
+        self.assertTrue(result.success)
 
     def test_call_bad_cam(self):
         self.oneCam('notACam')
         self.assertEqual(self.oneCam.messages[0][0],'e')
         self.assertEqual(self.oneCam.messages[0][1],'text="I do not recognize camera notACam"')
-
 
 
 class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
@@ -364,7 +367,7 @@ if __name__ == '__main__':
 
 
     suite = None
-    suite = unittest.TestLoader().loadTestsFromName('test_boss_collimate.TestOneCam.test_noCheckImage')
+    #suite = unittest.TestLoader().loadTestsFromName('test_boss_collimate.TestOneCam.test_noCheckImage')
     #suite = unittest.TestLoader().loadTestsFromName('test_boss_collimate.TestHartmann.test_make_plot_notFocused')
     # suite = unittest.TestLoader().loadTestsFromName('test_boss_collimate.TestOneCam.test_check_image_noLight_b2')
     if suite:

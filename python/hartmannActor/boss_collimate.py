@@ -175,7 +175,7 @@ class OneCam(object):
         try:
             self._load_data(self.indir,self.expnum1,self.expnum2)
             self._do_gain_bias()
-            if self.noCheckImage:
+            if not self.noCheckImage:
                 self._check_images()
             self._find_shift()
             self._find_collimator_motion()
