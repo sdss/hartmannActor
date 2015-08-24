@@ -214,10 +214,21 @@ class TestOneCam(hartmannTester.HartmannTester, unittest.TestCase):
     def test_check_image_noLight_r2(self):
         self._check_image_noLight('r2')
 
+    def test_noCheckImage(self):
+        """Should not raise a HartError; opposite of the noLight tests."""
+        self.oneCam.expnum1 = get_expnum(noLight1)
+        self.oneCam.expnum2 = get_expnum(noLight2)
+        self.oneCam.indir = os.path.dirname(noLight1)
+        self.oneCam.noCheckImage = False
+        result = self.oneCam('b1')
+        print result.success, result.messages
+
     def test_call_bad_cam(self):
         self.oneCam('notACam')
         self.assertEqual(self.oneCam.messages[0][0],'e')
         self.assertEqual(self.oneCam.messages[0][1],'text="I do not recognize camera notACam"')
+
+
 
 class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
     def setUp(self):
@@ -348,11 +359,12 @@ class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
         self.assertFalse(self.hart.success)
         self._check_cmd(1,2,0,1,False)
 
-
 if __name__ == '__main__':
     verbosity = 2
 
+
     suite = None
+    suite = unittest.TestLoader().loadTestsFromName('test_boss_collimate.TestOneCam.test_noCheckImage')
     #suite = unittest.TestLoader().loadTestsFromName('test_boss_collimate.TestHartmann.test_make_plot_notFocused')
     # suite = unittest.TestLoader().loadTestsFromName('test_boss_collimate.TestOneCam.test_check_image_noLight_b2')
     if suite:

@@ -28,14 +28,15 @@ class hartmannCmd(object):
                                         keys.Key("mjd", types.Int(), help="MJD of the Hartmann pair to process (default: current MJD)."),
                                         keys.Key("noCorrect", help="if set, do not apply any recommended corrections."),
                                         keys.Key("noSubframe", help="if set, take fullframe images."),
-                                        keys.Key("ignoreResiduals", help="if set, apply red moves regardless of resulting blue residuals.")
+                                        keys.Key("ignoreResiduals", help="if set, apply red moves regardless of resulting blue residuals."),
+                                        keys.Key("noCheckImage", help="if set, do not check the flux level in the image (useful for sparse plugged plates)."),
                                         )
 
         self.vocab = [
             ('ping', '', self.ping),
             ('status', '', self.status),
-            ('collimate', '[noCorrect] [noSubframe] [ignoreResiduals]', self.collimate),
-            ('recompute', '<id> [<id2>] [<mjd>] [noCorrect]', self.recompute),
+            ('collimate', '[noCorrect] [noSubframe] [ignoreResiduals] [noCheckImage]', self.collimate),
+            ('recompute', '<id> [<id2>] [<mjd>] [noCorrect] [noCheckImage]', self.recompute),
         ]
 
     def ping(self, cmd):
@@ -64,9 +65,11 @@ class hartmannCmd(object):
             mjd = int(astroMJD.mjdFromPyTuple(time.gmtime())+0.3)
 
         moveMotors = "noCorrect" not in keywords
+        noCheckImage = "noCheckImage" in keywords
 
         hartmann.reinit()
-        hartmann.collimate(expnum1, expnum2=expnum2, mjd=mjd, cmd=cmd)
+        hartmann.collimate(expnum1, expnum2=expnum2, mjd=mjd, cmd=cmd,
+                           noCheckImage=noCheckImage)
         if hartmann.success and moveMotors:
             hartmann.move_motors()
         
@@ -85,13 +88,15 @@ class hartmannCmd(object):
         moveMotors = "noCorrect" not in cmd.cmd.keywords
         subFrame = "noSubframe" not in cmd.cmd.keywords
         ignoreResiduals = "ignoreResiduals" in cmd.cmd.keywords
-        
+        noCheckImage = "noCheckImage" in cmd.cmd.keywords
+
         if ignoreResiduals and not moveMotors:
             cmd.fail('text=ignoreResiduals and noCorrect are mutually exclusive!')
             return
 
         hartmann.reinit()
-        hartmann(cmd, moveMotors=moveMotors, subFrame=subFrame, ignoreResiduals=ignoreResiduals)
+        hartmann(cmd, moveMotors=moveMotors, subFrame=subFrame,
+                 ignoreResiduals=ignoreResiduals, noCheckImage=noCheckImage)
         if hartmann.success:
             cmd.finish()
         else:

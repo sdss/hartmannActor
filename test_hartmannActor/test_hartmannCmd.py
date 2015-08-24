@@ -63,6 +63,7 @@ class TestHartmannCmd(HartmannCmdTester,unittest.TestCase):
         self.assertEqual(hart.kwargs['expnum2'],expect.get('expnum2'))
         self.assertEqual(hart.kwargs['mjd'],expect.get('mjd'))
         self.assertEqual(hart.moved,expect.get('moveMotors',True))
+        self.assertEqual(hart.kwargs['noCheckImage'],expect.get('noCheckImage',False))
     def test_recompute_ok(self):
         expect = {'expnum1':1, 'mjd':12345}
         self._recompute('id={expnum1} mjd={mjd}'.format(**expect), expect, success=True)
@@ -73,6 +74,9 @@ class TestHartmannCmd(HartmannCmdTester,unittest.TestCase):
     def test_recompute_fails(self):
         expect = {'expnum1':1, 'expnum2':5, 'mjd':12345, 'moveMotors':False}
         self._recompute('id={expnum1} id2={expnum2} mjd={mjd}'.format(**expect), expect, success=False)
+    def test_recompute_noCheckImage(self):
+        expect = {'expnum1':1, 'mjd':12345, 'noCheckImage':True}
+        self._recompute('id={expnum1} mjd={mjd} noCheckImage'.format(**expect), expect, success=True)
 
     def _collimate(self, args, expect, success=True):
         hart = FakeHartmann(success)
@@ -82,6 +86,7 @@ class TestHartmannCmd(HartmannCmdTester,unittest.TestCase):
         self.assertEqual(hart.kwargs['moveMotors'],expect.get('moveMotors',True))
         self.assertEqual(hart.kwargs['subFrame'],expect.get('subFrame',True))
         self.assertEqual(hart.kwargs['ignoreResiduals'],expect.get('ignoreResiduals',False))
+        self.assertEqual(hart.kwargs['noCheckImage'],expect.get('noCheckImage',False))
     def test_collimate_ok(self):
         expect = {}
         self._collimate('', expect, success=True)
@@ -98,6 +103,9 @@ class TestHartmannCmd(HartmannCmdTester,unittest.TestCase):
         args = 'ignoreResiduals noCorrect'
         self._run_cmd('collimate %s'%args, None)
         self._check_cmd(0,0,0,0, True, True)
+    def test_noCheckImage(self):
+        expect = {'noCheckImage':True}
+        self._collimate('noCheckImage', expect, success=True)
 
 if __name__ == '__main__':
     verbosity = 2

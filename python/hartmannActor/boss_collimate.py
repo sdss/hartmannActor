@@ -93,13 +93,18 @@ class OneCamResult(object):
 class OneCam(object):
     """Collimate one camera."""
     def __init__(self, m, b, bsteps, focustol, coeff,
-                 expnum1, expnum2, indir, test=False):
+                 expnum1, expnum2, indir, test=False, noCheckImage=False):
+        """
+            Kwargs:
+            noCheckImage (bool): skip the variance calculation check for whether
+                                 there is light in the camera (useful for sparse pluggings).
+        """
         self.test = test
         
         self.indir = indir
         self.expnum1 = expnum1
         self.expnum2 = expnum2
-
+        self.noCheckImage = noCheckImage
 
         # allowable focus tolerance (pixels): if offset is less than this, we're in focus.
         self.focustol = focustol
@@ -156,8 +161,9 @@ class OneCam(object):
     def __call__(self, cam):
         """
         Compute the collimation values for one camera.
-        
-        See parameters for self.collimate().
+
+        Args:
+            cam (str): the camera to perform the calculation on (r1, r2, b1, b2)
         """
         if cam not in ['r1','r2','b1','b2']:
             self.add_msg('e','text="I do not recognize camera %s"'%cam)
@@ -169,7 +175,8 @@ class OneCam(object):
         try:
             self._load_data(self.indir,self.expnum1,self.expnum2)
             self._do_gain_bias()
-            self._check_images()
+            if self.noCheckImage:
+                self._check_images()
             self._find_shift()
             self._find_collimator_motion()
         # Have to handle exceptions here, because we're called via multiprocess.
@@ -470,16 +477,22 @@ class Hartmann(object):
         # Can't use update_status here, as we don't necessarily have a cmd available.
         myGlobals.hartmannStatus = 'initialized'
 
-    def __call__(self, cmd, moveMotors=False, subFrame=True, ignoreResiduals=False, plot=False):
+    def __call__(self, cmd, moveMotors=False, subFrame=True, ignoreResiduals=False,
+                 noCheckImage=False, plot=False):
         """
         Take and reduce a pair of hartmann exposures.
         Usually apply the recommended collimator moves.
         
-        cmd is the currently active Commander instance, for passing info/warn messages.
-        if moveMotors is set, apply the computed corrections.
-        if subFrame is set, only readout a part of the chip.
-        if ignoreResiduals is set, apply red moves regardless of resulting blue residuals.")
-        if plot is set, make a plot representing the calculation.
+        Args:
+            cmd (Cmdr): the currently active Commander instance, for passing info/warn messages.
+
+        Kwargs:
+            moveMotors (bool): apply the computed corrections.
+            subFrame (bool): only readout a part of the chip.
+            ignoreResiduals (bool): apply red moves regardless of resulting blue residuals.
+            noCheckImage (bool): skip the variance calculation check for whether
+                                 there is light in the camera (useful for sparse pluggings).
+            plot (bool): make a plot representing the calculation.
         """
         self.cmd = cmd
 
@@ -487,7 +500,8 @@ class Hartmann(object):
             # take the hartmann frames.
             exposureId = self.take_hartmanns(subFrame)
             # Perform the collimation calculations
-            self.collimate(exposureId[0], exposureId[1], ignoreResiduals=ignoreResiduals, plot=plot)
+            self.collimate(exposureId[0], exposureId[1], ignoreResiduals=ignoreResiduals, plot=plot,
+                           noCheckImage=noCheckImage)
             if self.success and moveMotors:
                 self._move_motors()
         except HartError as e:
@@ -530,12 +544,12 @@ class Hartmann(object):
             counter += 1
         return [files[i] for i,x in enumerate(test) if not x]
 
-    def _collimate(self, expnum1, expnum2, indir, docams):
+    def _collimate(self, expnum1, expnum2, indir, docams, noCheckImage):
         """The guts of the collimation, to be wrapped in a try:except block."""
         # pool = ThreadPool(len(docams)) # NOTE: for testing with threads instead of processes
         pool = Pool(len(docams))
         oneCam = OneCam(self.m, self.b, self.bsteps, self.focustol, self.coeff,
-                        expnum1, expnum2, indir)
+                        expnum1, expnum2, indir, noCheckImage=noCheckImage)
         results = pool.map(oneCam, docams)
         pool.close()
         pool.join()
@@ -550,7 +564,8 @@ class Hartmann(object):
 
     def collimate(self, expnum1, expnum2=None, indir=None, mjd=None,
                   specs=['sp1','sp2'],docams1=['b1','r1'],docams2=['b2','r2'],
-                  test=False, ignoreResiduals=False, plot=False, cmd=None):
+                  test=False, ignoreResiduals=False, plot=False, cmd=None,
+                  noCheckImage=False):
         """
         Compute the spectrograph collimation focus from Hartmann mask exposures.
         
@@ -600,7 +615,7 @@ class Hartmann(object):
 
         docams = ['r1','r2','b1','b2']
         try:
-            self._collimate(expnum1, expnum2, indir, docams)
+            self._collimate(expnum1, expnum2, indir, docams, noCheckImage)
         except Exception as e:
             self.success = False
             self.cmd.error('text="Collimation calculation failed! %s"'%e)
