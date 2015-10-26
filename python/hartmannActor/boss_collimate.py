@@ -728,7 +728,7 @@ class Hartmann(object):
         ylim2 = [0.92,1.01]
 
         def color(cam):
-            rb = {'r':'red','b':'blue'}
+            rb = {'r':'red','b':'cyan'}
             return shade + rb[cam]
 
         result = self.full_result[spec]
