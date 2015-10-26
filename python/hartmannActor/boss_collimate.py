@@ -719,18 +719,27 @@ class Hartmann(object):
             inset[1] = len(xshift)-1
         return inset
 
-    def _plot_one(self, ax1, ax2, spec):
-        """Plot collimation curves for one spectrograph"""
+    def _plot_one(self, ax1, ax2, spec, shade='', marker='*'):
+        """
+        Plot collimation curves for one spectrograph.
+        Set shade='dark' to get the dark colors (e.g. to distinguish sp1 and sp2).
+        """
         ylim1 = [0.4,1.05]
         ylim2 = [0.92,1.01]
+
+        def color(cam):
+            rb = {'r':'red','b':'blue'}
+            return shade + rb[cam]
 
         result = self.full_result[spec]
         for cam in result:
             inset = self._get_inset_range(result[cam].ibest, result[cam].xshift)
-            ax1.plot(result[cam].xshift,result[cam].coeff/max(result[cam].coeff),'*-',color=cam,lw=1.5)
-            ax2.plot(result[cam].xshift[inset[0]:inset[1]],result[cam].coeff[inset[0]:inset[1]]/max(result[cam].coeff),'*-',color=cam,lw=1.5)
-            ax1.plot([result[cam].xoffset,result[cam].xoffset],ylim1,'--',color=cam)
-            ax2.plot([result[cam].xoffset,result[cam].xoffset],ylim2,'--',color=cam)
+            ax1.plot(result[cam].xshift,result[cam].coeff/max(result[cam].coeff),
+                     '*-',color=color(cam),lw=1.5,mec='none',ms=6,marker=marker,label=cam+spec[2])
+            ax2.plot(result[cam].xshift[inset[0]:inset[1]],result[cam].coeff[inset[0]:inset[1]]/max(result[cam].coeff),
+                     '*-',color=color(cam),lw=1.5,mec='none',ms=6,marker=marker)
+            ax1.axvline(result[cam].xoffset,ls='--',lw=1.2,color=color(cam))
+            ax2.axvline(result[cam].xoffset,ls='--',lw=1.2,color=color(cam))
             plt.yticks(np.arange(0.90,1.01,.05))
         ax1.set_ylim(ylim1[0],ylim1[1])
         ax2.axis([result[cam].xshift[inset[0]],result[cam].xshift[inset[1]],ylim2[0],ylim2[1]])
@@ -746,8 +755,12 @@ class Hartmann(object):
         ax2 = fig.add_axes([0.35,0.2,0.3,0.3])
 
         for spec in ['sp1','sp2']:
-            self._plot_one(ax1,ax2,spec)
+            shade = 'dark' if spec == 'sp2' else ''
+            marker = '^' if spec == 'sp2' else 's'
+            self._plot_one(ax1,ax2,spec,shade=shade,marker=marker)
             ax1.set_title(title)
+
+        ax1.legend(loc='best', labelspacing=0.2, borderpad=.2)
 
         plt.savefig(plotfile,bbox_inches='tight')
 #...
