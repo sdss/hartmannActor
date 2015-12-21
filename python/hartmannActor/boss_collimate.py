@@ -563,7 +563,7 @@ class Hartmann(object):
         self._bundle_result(docams, results)
 
     def collimate(self, expnum1, expnum2=None, indir=None, mjd=None,
-                  specs=['sp1','sp2'],docams1=['b1','r1'],docams2=['b2','r2'],
+                  specs=['sp1','sp2'],
                   test=False, ignoreResiduals=False, plot=False, cmd=None,
                   noCheckImage=False):
         """
@@ -574,8 +574,6 @@ class Hartmann(object):
         indir:   directory where the exposures are located.
         mjd:     MJD of exposures in /data directory.
         spec:    spectrograph(s) to collimate ('sp1','sp2',['sp1','sp2'])
-        docams1: camera(s) in sp1 to collimate ('b1','r1',['b1','r1'])
-        docams2: camera(s) in sp2 to collimate ('b2','r2',['b2','r2'])
         test:    If True, we are trying to determine the collimation parameters, so ignore 'b' parameter.
         ignoreResiduals: apply red moves even if blue residuals are too high.
         plot:    If True, save a plot of the best fit collimation.
@@ -601,17 +599,6 @@ class Hartmann(object):
             raise HartError("Cannot complete collimation, these files not found: %s"%','.join(files_missing))
 
         update_status(self.cmd, 'processing')
-
-        # # to handle the various string/list/tuple possibilities for each argument
-        # docams = []
-        # if spec == 'sp1':
-        #     docams.extend([docams1,] if isinstance(docams1,str) else docams1)
-        # elif spec == 'sp2':
-        #     docams.extend([docams2,] if isinstance(docams2,str) else docams2)
-        # else:
-        #     self.success = False
-        #     self.cmd.error('text="I do not understand spectrograph: %s"'%spec)
-        #     return
 
         docams = ['r1','r2','b1','b2']
         try:
