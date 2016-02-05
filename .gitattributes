@@ -1,6 +1,8 @@
 * text=auto !eol
 bin/compute_collimator_moves.py -text
+etc/config.ini -text
 etc/hartmann.cfg -text
+etc/hartmannActor.module -text
 python/hartmannActor/Commands/__init__.py -text
 python/hartmannActor/Commands/hartmannCmd.py -text
 python/hartmannActor/__init__.py -text
