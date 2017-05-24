@@ -14,6 +14,10 @@ import hartmannTester
 from hartmannActor import hartmannActor_main
 from hartmannActor import boss_collimate
 
+import glob
+import os
+
+
 def get_expnum(filename):
     """Return the exposure number from this filename."""
     return int(filename.split('-')[-1].split('.')[0])
@@ -242,7 +246,13 @@ class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
         self.hart = boss_collimate.Hartmann(self.actor, m, b, constants, coeff)
         self.hart.cmd = self.cmd
         self.hart.mjd = 12345
-        
+
+    def tearDown(self):
+
+        plots = glob.glob('./Collimate*.png')
+        for pl in plots:
+            os.remove(pl)
+
     def test_move_motor(self):
         self.hart._move_motor('sp2', 10)
         self._check_cmd(1,0,0,0,False)
