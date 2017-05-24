@@ -30,12 +30,16 @@ class hartmannCmd(object):
                                         keys.Key("noSubframe", help="if set, take fullframe images."),
                                         keys.Key("ignoreResiduals", help="if set, apply red moves regardless of resulting blue residuals."),
                                         keys.Key("noCheckImage", help="if set, do not check the flux level in the image (useful for sparse plugged plates)."),
+                                        keys.Key('minBlueCorrection',
+                                                 help='if set, the calculated correction for the '
+                                                      'blue ring will be the minimum to get in the '
+                                                      'tolerance range.'),
                                         )
 
         self.vocab = [
             ('ping', '', self.ping),
             ('status', '', self.status),
-            ('collimate', '[noCorrect] [noSubframe] [ignoreResiduals] [noCheckImage]', self.collimate),
+            ('collimate', '[noCorrect] [noSubframe] [ignoreResiduals] [noCheckImage] [minBlueCorrection]', self.collimate),
             ('recompute', '<id> [<id2>] [<mjd>] [noCorrect] [noCheckImage]', self.recompute),
         ]
 
@@ -72,13 +76,13 @@ class hartmannCmd(object):
                            noCheckImage=noCheckImage)
         if hartmann.success and moveMotors:
             hartmann.move_motors()
-        
+
         boss_collimate.update_status(cmd, 'idle')
         if hartmann.success:
             cmd.finish()
         else:
             cmd.fail('text="Collimation process failed"')
-    
+
     def collimate(self, cmd):
         """
         Take and reduce a pair of hartmann exposures, assuming the arc lamps are already on.
@@ -89,6 +93,7 @@ class hartmannCmd(object):
         subFrame = "noSubframe" not in cmd.cmd.keywords
         ignoreResiduals = "ignoreResiduals" in cmd.cmd.keywords
         noCheckImage = "noCheckImage" in cmd.cmd.keywords
+        minBlueCorrection = 'minBlueCorrection' in cmd.cmd.keywords
 
         if ignoreResiduals and not moveMotors:
             cmd.fail('text=ignoreResiduals and noCorrect are mutually exclusive!')
@@ -96,7 +101,8 @@ class hartmannCmd(object):
 
         hartmann.reinit()
         hartmann(cmd, moveMotors=moveMotors, subFrame=subFrame,
-                 ignoreResiduals=ignoreResiduals, noCheckImage=noCheckImage)
+                 ignoreResiduals=ignoreResiduals, noCheckImage=noCheckImage,
+                 minBlueCorrection=minBlueCorrection)
         if hartmann.success:
             cmd.finish()
         else:

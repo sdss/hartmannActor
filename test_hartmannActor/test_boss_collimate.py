@@ -103,7 +103,9 @@ b2 = boss_collimate.OneCamResult('b2', True, xshift, b2coeff, 48, 0.4, 903, True
 r2 = boss_collimate.OneCamResult('r2', True, xshift, r2coeff, 50, 0.5, 3638, False, None)
 full_result = {'sp1':{'b':b1,'r':r1},'sp2':{'b':b2,'r':r2}}
 
+
 class TestOneCam(hartmannTester.HartmannTester, unittest.TestCase):
+
     def setUp(self):
         super(TestOneCam,self).setUp()
         m,b,constants,coeff = get_config_constants()
@@ -139,7 +141,7 @@ class TestOneCam(hartmannTester.HartmannTester, unittest.TestCase):
     def test_bad_header_noHgcd(self):
         header = pyfits.getheader(data_dir + HgCdOff1)
         self._bad_header(header, True, 1)
-        
+
     def test_bad_header_noLamps(self):
         header = pyfits.getheader(data_dir + bothOff1)
         self._bad_header(header, True, 2)
@@ -334,7 +336,7 @@ class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
         self.hart.make_plot(exp1, exp2)
         self.assertTrue(os.path.exists(filename),'Did not create expected PNG file')
         os.remove(filename)
-    
+
     @unittest.skip('need file for this test!')
     def test_no_light(self):
         """Test with a file that has no signal."""
@@ -350,6 +352,8 @@ class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
         self._check_cmd(0,13,1,0,False)
         self.assertEqual(self.hart.result, focused_pistons)
         self.assertEqual(self.hart.moves, focused_moves)
+        self.assertTrue(self.hart.bres_min['sp1'] == 0)
+        self.assertTrue(self.hart.bres_min['sp2'] == 0)
         for cam in self.hart.full_result:
             self.assertEqual(self.hart.full_result[cam].focused, focused_focused[cam])
 
@@ -362,8 +366,24 @@ class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
         self._check_cmd(0,11,3,0,False)
         self.assertEqual(self.hart.result, notFocused_pistons)
         self.assertEqual(self.hart.moves, notFocused_moves)
+        self.assertTrue(self.hart.bres_min['sp1'] > 0)
+        self.assertTrue(self.hart.bres_min['sp2'] > 0)
         for cam in self.hart.full_result:
             self.assertEqual(self.hart.full_result[cam].focused, notFocused_focused[cam])
+
+    def test_collimate_notFocused_minBlue(self):
+        """Test collimating with minimum correction to the blue ring."""
+
+        exp1 = get_expnum(notFocused1)
+        exp2 = get_expnum(notFocused2)
+
+        self.hart.collimate(exp1, exp2, indir=focused_dir, cmd=self.cmd, plot=False,
+                            minBlueCorrection=True)
+
+        self.assertFalse(self.hart.success)
+
+        sp1BResMin = self.hart.bres_min['sp1']
+        self.assertAlmostEqual(sp1BResMin, 1.865203762)
 
     def test_call_exposure_fails(self):
         """Test collimating where the first file fails"""
@@ -372,9 +392,9 @@ class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
         self.assertFalse(self.hart.success)
         self._check_cmd(1,2,0,1,False)
 
+
 if __name__ == '__main__':
     verbosity = 2
-
 
     suite = None
     #suite = unittest.TestLoader().loadTestsFromName('test_boss_collimate.TestOneCam.test_noCheckImage')

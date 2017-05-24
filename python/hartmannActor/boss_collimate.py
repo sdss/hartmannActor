@@ -100,7 +100,7 @@ class OneCam(object):
                                  there is light in the camera (useful for sparse pluggings).
         """
         self.test = test
-        
+
         self.indir = indir
         self.expnum1 = expnum1
         self.expnum2 = expnum2
@@ -108,10 +108,10 @@ class OneCam(object):
 
         # allowable focus tolerance (pixels): if offset is less than this, we're in focus.
         self.focustol = focustol
-        
+
         # maximum pixel shift to search in X
         self.maxshift = 2
-        
+
         # collimator motion constants for the different regions.
         self.m = m #{'b1':1.,'b2':1.,'r1':1.,'r2':1.}
         self.b = b #{'b1':0.129,'b2':0.00,'r1':-0.229,'r2':0.068}
@@ -135,7 +135,7 @@ class OneCam(object):
         # Also, the other blue lines have a higher temperature dependence, so
         # we don't want to use them, as the arc lamp might not be warm yet.
         self.region = np.s_[850:1301,1500:2501]
-        
+
         self.bias_slice = [np.s_[950:1339,10:101],np.s_[950:1339,4250:4341]]
         self.cam_gains = {'b1':[1.048, 1.048, 1.018, 1.006], 'b2':[1.040, 0.994, 1.002, 1.010],
                           'r1':[1.966, 1.566, 1.542, 1.546], 'r2':[1.598, 1.656, 1.582, 1.594]}
@@ -143,7 +143,7 @@ class OneCam(object):
                                 [np.s_[0:2056,2048:4096],np.s_[56:2112,2176:4224]]],
                            'r':[[np.s_[0:2064,0:2057],np.s_[48:2112,119:2176]],
                                 [np.s_[0:2064,2057:4114],np.s_[48:2112,2176:4233]]],}
-        
+
         # Did everything work?
         self.success = True
         # to store the results of the calculations.
@@ -188,7 +188,7 @@ class OneCam(object):
             self.add_msg('e','text="%s reported %s: %s"'%(self.cam, type(e).__name__, e))
             self.success = False
         return OneCamResult(cam, self.success, self.xshift, self.coeff, self.ibest, self.xoffset, self.piston, self.focused, self.messages)
-    
+
     def add_msg(self, level, message):
         """Add a message to the message list to be returned."""
         self.messages.append((level, message))
@@ -209,7 +209,7 @@ class OneCam(object):
         else:
             return None
     #...
-    
+
     def bad_header(self,header):
         """
         Return True if the header indicates there are no lamps on or no flat-field
@@ -217,7 +217,7 @@ class OneCam(object):
         If the wrong number of petals are closed, then emit a warning and return False.
         """
         sum_string = lambda field: sum([int(x) for x in field.split()])
-        
+
         isBad = False
         ffs = header.get('FFS',None)
         # 8 flat field screens: 0 for open, 1 for closed
@@ -230,7 +230,7 @@ class OneCam(object):
         else:
             self.add_msg('w',"text='%s: FFS not in FITS header!'"%self.cam)
             isBad = True
-        
+
         Ne = header.get('NE',None)
         HgCd = header.get('HGCD',None)
         # 4 of each lamp: 0 for off, 1 for on
@@ -246,9 +246,9 @@ class OneCam(object):
         else:
             self.add_msg('w',"text='%s: NE and/or HgCd not in FITS header.'"%self.cam)
             isBad = True
-        
+
         return isBad
-    
+
     def _load_data(self, indir, expnum1, expnum2):
         """
         Read in the two images, and check that headers are reasonable.
@@ -257,7 +257,7 @@ class OneCam(object):
         filename2 = get_filename(indir, self.cam, expnum2)
         if not os.path.exists(filename1) and not os.path.exists(filename2):
             raise HartError("All files not found: %s, %s!"%(filename1,filename2))
-        
+
         # NOTE: we don't process with sdssproc, because the subarrays cause it to fail.
         # Also, because it would restore the dependency on SoS that this class removed!
         try:
@@ -277,7 +277,7 @@ class OneCam(object):
 
         if self.bad_header(header1) or self.bad_header(header2):
             raise HartError("Incorrect header values in fits file.")
-       
+
         self.hartpos1 = self.check_Hartmann_header(header1)
         self.hartpos2 = self.check_Hartmann_header(header2)
         if self.hartpos1 is None or self.hartpos2 is None:
@@ -369,11 +369,11 @@ class OneCam(object):
         nshift = int(np.ceil(2*self.maxshift/dx))
         xshift = -self.maxshift + dx * np.arange(nshift,dtype='f8')
         self.xshift = xshift # save for plotting
-        
+
         def calc_shift(xs,img1,img2,mask):
             shifted = interpolation.shift(img2,[xs,0],order=order,prefilter=False)
             return (img1*shifted*mask).sum()
-        
+
         self.coeff = np.zeros(nshift,dtype='f8')
         filtered1 = interpolation.spline_filter(subimg1)
         filtered2 = interpolation.spline_filter(subimg2)
@@ -444,7 +444,7 @@ class Hartmann(object):
         self.actor = actor
         # so we can use it at the commandline, outside STUI/tron.
         self.models = actor.models if actor is not None else None
-            
+
         self.cmd = None
         self.mjd = 00000
 
@@ -456,9 +456,9 @@ class Hartmann(object):
         self.badres = constants['badres']
         # how much pixel-to-pixel separation we allow to be "in focus"
         self.focustol = constants['focustol']
-        
+
         self.coeff = coeff
-        
+
         # the sub-frame region on the chip to read out when doing quick-hartmanns.
         self.subFrame = [850,1400]
 
@@ -467,22 +467,25 @@ class Hartmann(object):
 
         self.reinit()
     #...
-    
+
     def reinit(self):
         self.success = True
         # final results go here
         self.result = {'sp1':{'b':0.,'r':0.},'sp2':{'b':0.,'r':0.}}
         self.full_result = {'sp1':{'b':None,'r':None},'sp2':{'b':None,'r':None}}
         self.moves = {'sp1':0, 'sp2':0}
+        self.residuals = {'sp1': [0, 0., ''], 'sp2': [0, 0., '']}
+        self.bres_min = {'sp1': 0., 'sp2': 0.}
+
         # Can't use update_status here, as we don't necessarily have a cmd available.
         myGlobals.hartmannStatus = 'initialized'
 
     def __call__(self, cmd, moveMotors=False, subFrame=True, ignoreResiduals=False,
-                 noCheckImage=False, plot=False):
+                 noCheckImage=False, plot=False, minBlueCorrection=False):
         """
         Take and reduce a pair of hartmann exposures.
         Usually apply the recommended collimator moves.
-        
+
         Args:
             cmd (Cmdr): the currently active Commander instance, for passing info/warn messages.
 
@@ -493,6 +496,8 @@ class Hartmann(object):
             noCheckImage (bool): skip the variance calculation check for whether
                                  there is light in the camera (useful for sparse pluggings).
             plot (bool): make a plot representing the calculation.
+            minBlueCorrection (bool): calculates only the minimum blue ring correction needed to
+                                      get the focus within the tolerance level.
         """
         self.cmd = cmd
 
@@ -501,7 +506,7 @@ class Hartmann(object):
             exposureId = self.take_hartmanns(subFrame)
             # Perform the collimation calculations
             self.collimate(exposureId[0], exposureId[1], ignoreResiduals=ignoreResiduals, plot=plot,
-                           noCheckImage=noCheckImage)
+                           noCheckImage=noCheckImage, minBlueCorrection=minBlueCorrection)
             if self.success and moveMotors:
                 self._move_motors()
         except HartError as e:
@@ -565,10 +570,10 @@ class Hartmann(object):
     def collimate(self, expnum1, expnum2=None, indir=None, mjd=None,
                   specs=['sp1','sp2'],
                   test=False, ignoreResiduals=False, plot=False, cmd=None,
-                  noCheckImage=False):
+                  noCheckImage=False, minBlueCorrection=False):
         """
         Compute the spectrograph collimation focus from Hartmann mask exposures.
-        
+
         expnum1: first exposure number of raw sdR file (integer).
         expnum2: second exposure number (default: expnum1+1)
         indir:   directory where the exposures are located.
@@ -577,6 +582,7 @@ class Hartmann(object):
         test:    If True, we are trying to determine the collimation parameters, so ignore 'b' parameter.
         ignoreResiduals: apply red moves even if blue residuals are too high.
         plot:    If True, save a plot of the best fit collimation.
+        minBlueCorrection: if True, calculates the minimum blue correction needed to get in focus.
         cmd:     command handler
         """
 
@@ -609,11 +615,12 @@ class Hartmann(object):
             return
         else:
             for spec in specs:
-                self._mean_moves(spec, ignoreResiduals=ignoreResiduals)
+                self._mean_moves(spec, ignoreResiduals=ignoreResiduals,
+                                 minBlueCorrection=minBlueCorrection)
             if plot:
                 self.make_plot(expnum1,expnum2)
     #...
-    
+
     def take_hartmanns(self,subFrame):
         """
         Take a pair of hartmann exposures, in self.subFrame if requested.
@@ -640,7 +647,7 @@ class Hartmann(object):
             self.cmd.inform('text="got hartmann %s exposure %d"' % (side, exposureId))
         return exposureIds
 
-    def _mean_moves(self, spec, ignoreResiduals=False):
+    def _mean_moves(self, spec, ignoreResiduals=False, minBlueCorrection=False):
         """Compute the mean movement and residuals for this spectrograph,
         after r&b moves have been determined."""
 
@@ -648,20 +655,41 @@ class Hartmann(object):
         bres = -(self.result[spec]['b'] - avg)/self.bsteps
         rres = self.result[spec]['r'] - avg
 
+        # Calculates the minimum blue ring correction needed to get in the
+        # focus tolerance plus a 1 degree buffer (see ticket #2701).
+        if abs(bres) >= self.badres:
+            bres_min = 2 * (bres - np.sign(bres) * self.badres) + np.sign(bres)
+        else:
+            bres_min = 0.
+
         if abs(bres) < self.badres:
             resid = '"OK"'
             msglvl = self.cmd.inform
         elif ignoreResiduals:
-            resid = '"Move blue ring %.1f degrees."'%(bres*2)
+            if not minBlueCorrection:
+                resid = '"Move blue ring %.1f degrees."' % (bres * 2)
+            else:
+                resid = ('"Move blue ring {0:.1f} degrees. '
+                         'This is the minimum move needed to '
+                         'get in focus tolerance."'.format(bres_min))
             msglvl = self.cmd.warn
         else:
-            resid = '"Bad angle: move blue ring %.1f degrees then rerun gotoField with Hartmanns checked."'%(bres*2)
+            if not minBlueCorrection:
+                resid = ('"Bad angle: move blue ring %.1f degrees then rerun '
+                         'gotoField with Hartmanns checked."' % (bres * 2))
+            else:
+                resid = ('"Bad angle: move blue ring %.1f degrees then '
+                         'rerun gotoField with Hartmanns checked. This is the '
+                         'minimum move needed to get in focus tolerance."' % bres_min)
+
             msglvl = self.cmd.warn
             self.success = False
         msglvl('%sResiduals=%d,%.1f,%s'%(spec,rres,bres,resid))
         self.cmd.inform('%sAverageMove=%d'%(spec,avg))
         self.moves[spec] = avg
-    
+        self.residuals[spec] = [rres, bres, resid]
+        self.bres_min[spec] = bres_min
+
     def move_motors(self):
         """Apply computed collimator piston moves, in an exception-safe manner."""
         try:
