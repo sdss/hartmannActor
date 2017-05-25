@@ -135,7 +135,7 @@ class TestOneCam(hartmannTester.HartmannTester, unittest.TestCase):
     def test_bad_header_noHgcd(self):
         header = pyfits.getheader(data_dir + HgCdOff1)
         self._bad_header(header, True, 1)
-        
+
     def test_bad_header_noLamps(self):
         header = pyfits.getheader(data_dir + bothOff1)
         self._bad_header(header, True, 2)
@@ -242,7 +242,7 @@ class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
         self.hart = boss_collimate.Hartmann(self.actor, m, b, constants, coeff)
         self.hart.cmd = self.cmd
         self.hart.mjd = 12345
-        
+
     def test_move_motor(self):
         self.hart._move_motor('sp2', 10)
         self._check_cmd(1,0,0,0,False)
@@ -261,6 +261,11 @@ class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
         self.hart.moves = {'sp1':100, 'sp2':200}
         self.hart._move_motors()
         self._check_cmd(2,1,0,0,False)
+
+    def test_move_motors_zero(self):
+        self.hart.moves = {'sp1': 0.2, 'sp2': 200}
+        self.hart._move_motors()
+        self._check_cmd(1, 2, 0, 0, False)
 
     def _take_hartmanns(self,nCalls,nInfo,nWarn,nErr, expect):
         result = self.hart.take_hartmanns(True)
@@ -324,7 +329,7 @@ class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
         self.hart.make_plot(exp1, exp2)
         self.assertTrue(os.path.exists(filename),'Did not create expected PNG file')
         os.remove(filename)
-    
+
     @unittest.skip('need file for this test!')
     def test_no_light(self):
         """Test with a file that has no signal."""
