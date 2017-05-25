@@ -86,6 +86,7 @@ class OneCamResult(object):
         self.xoffset = xoffset
         self.piston = piston
         self.messages = messages
+        self.focused = focused
 
     def __str__(self):
         return '%s:%s : %s, %s'%(self.cam, self.success, self.xoffset, self.piston)
