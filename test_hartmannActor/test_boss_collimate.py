@@ -46,18 +46,19 @@ def get_config_constants():
 # notFocused is 3out/1in, you won't have to change the check_call test
 # in test_collimate_[not]focused().
 # ########################################
-focused_dir = '/data/spectro/56912'
-focused1 = 'sdR-b1-00184496.fit.gz'
-focused2 = 'sdR-b1-00184497.fit.gz'
-focused_pistons = {'sp1':{'b':int(-638),'r':3628},'sp2':{'b':int(-1244),'r':1578}}
-focused_focused = {'sp1':{'b':True,'r':False},'sp2':{'b':True,'r':False}}
-focused_moves = {'sp1':1493, 'sp2':159}
 
-notFocused1 = 'sdR-b1-00184450.fit.gz'
-notFocused2 = 'sdR-b1-00184451.fit.gz'
-notFocused_pistons = {'sp1':{'b':int(-3828),'r':0},'sp2':{'b':int(-4466),'r':-1577}}
-notFocused_focused = {'sp1':{'b':False,'r':True},'sp2':{'b':False,'r':True}}
-notFocused_moves = {'sp1':-1914, 'sp2':-3027}
+focused_dir = '/data/spectro/57898'
+focused1 = 'sdR-b1-00244723.fit.gz'
+focused2 = 'sdR-b1-00244724.fit.gz'
+focused_pistons = {'sp1': {'b': 1028, 'r': -659}, 'sp2': {'b': -315, 'r': 631}}
+focused_focused = {'sp1': {'b': True, 'r': True}, 'sp2': {'b': True, 'r': True}}
+focused_moves = {'sp1': 184.5, 'sp2': 158.0}
+
+notFocused1 = 'sdR-b1-00244721.fit.gz'
+notFocused2 = 'sdR-b1-00244722.fit.gz'
+notFocused_pistons = {'sp1': {'b': 707, 'r': -989}, 'sp2': {'b': 3152, 'r': 3471}}
+notFocused_focused = {'sp1': {'b': True, 'r': True}, 'sp2': {'b': False, 'r': False}}
+notFocused_moves = {'sp1': -141., 'sp2': 3311.5}
 # ########################################
 
 
@@ -346,30 +347,35 @@ class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
 
     def test_collimate_focused(self):
         """Test collimating given left expnum, the subsequent expnum is right."""
+
         exp1 = get_expnum(focused1)
-        self.hart.collimate(exp1,indir=focused_dir,cmd=self.cmd,plot=True)
+        self.hart.collimate(exp1, indir=focused_dir, cmd=self.cmd, plot=True)
         self.assertTrue(self.hart.success)
-        self._check_cmd(0,13,1,0,False)
+        self._check_cmd(0, 14, 0, 0, False)
         self.assertEqual(self.hart.result, focused_pistons)
         self.assertEqual(self.hart.moves, focused_moves)
-        self.assertTrue(self.hart.bres_min['sp1'] == 0)
-        self.assertTrue(self.hart.bres_min['sp2'] == 0)
-        for cam in self.hart.full_result:
-            self.assertEqual(self.hart.full_result[cam].focused, focused_focused[cam])
+
+        for spec in self.hart.full_result:
+            for cam in self.hart.full_result[spec]:
+                self.assertEqual(self.hart.full_result[spec][cam].focused,
+                                 focused_focused[spec][cam])
 
     def test_collimate_notFocused(self):
         """Test collimating with files in correct order (left->right)."""
+
         exp1 = get_expnum(notFocused1)
         exp2 = get_expnum(notFocused2)
-        self.hart.collimate(exp1,exp2,indir=focused_dir,cmd=self.cmd,plot=True)
+
+        self.hart.collimate(exp1, exp2, indir=focused_dir, cmd=self.cmd, plot=True)
         self.assertTrue(self.hart.success)
-        self._check_cmd(0,11,3,0,False)
+        self._check_cmd(0, 12, 2, 0, False)
         self.assertEqual(self.hart.result, notFocused_pistons)
         self.assertEqual(self.hart.moves, notFocused_moves)
-        self.assertTrue(self.hart.bres_min['sp1'] > 0)
-        self.assertTrue(self.hart.bres_min['sp2'] > 0)
-        for cam in self.hart.full_result:
-            self.assertEqual(self.hart.full_result[cam].focused, notFocused_focused[cam])
+
+        for spec in self.hart.full_result:
+            for cam in self.hart.full_result[spec]:
+                self.assertEqual(self.hart.full_result[spec][cam].focused,
+                                 notFocused_focused[spec][cam])
 
     def test_collimate_notFocused_minBlue(self):
         """Test collimating with minimum correction to the blue ring."""
