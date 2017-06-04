@@ -391,7 +391,7 @@ class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
         self.hart.collimate(exp1, exp2, indir=focused_dir, cmd=self.cmd, plot=False,
                             minBlueCorrection=True)
 
-        self.assertFalse(self.hart.success)
+        self.assertTrue(self.hart.success)
 
         sp1BResMin = self.hart.bres_min['sp1']
         self.assertAlmostEqual(sp1BResMin, 1.865203762)
