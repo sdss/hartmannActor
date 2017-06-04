@@ -711,7 +711,7 @@ class Hartmann(object):
 
     def _move_motor(self, spec, piston):
         """Apply a collimator piston move to spectrograph spec."""
-        if piston == 0:
+        if int(piston) == 0:
             self.cmd.respond('text="no recommended piston change for %s"' % (spec))
             return
         timeLim = 30.0

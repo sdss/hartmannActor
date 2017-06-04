@@ -275,6 +275,11 @@ class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
         self.hart._move_motors()
         self._check_cmd(2,1,0,0,False)
 
+    def test_move_motors_zero(self):
+        self.hart.moves = {'sp1': 0.2, 'sp2': 200}
+        self.hart._move_motors()
+        self._check_cmd(1, 2, 0, 0, False)
+
     def _take_hartmanns(self,nCalls,nInfo,nWarn,nErr, expect):
         result = self.hart.take_hartmanns(True)
         self.assertEqual(result,expect)
