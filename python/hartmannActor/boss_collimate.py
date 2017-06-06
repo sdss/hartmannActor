@@ -657,9 +657,11 @@ class Hartmann(object):
         rres = self.result[spec]['r'] - avg
 
         # Calculates the minimum blue ring correction needed to get in the
-        # focus tolerance plus a 1 degree buffer (see ticket #2701).
+        # focus tolerance plus a buffer (see ticket #2701).
+        buff = 0  # We don't use any buffer for now, just report the blue ring
+                  # move to get exactly into tolerance.
         if abs(bres) >= self.badres:
-            bres_min = 2 * (bres - np.sign(bres) * self.badres) + np.sign(bres)
+            bres_min = 2 * (bres - np.sign(bres) * self.badres) + np.sign(bres) * buff
         else:
             bres_min = 0.
 
