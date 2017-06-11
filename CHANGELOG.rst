@@ -7,7 +7,7 @@ Change Log
 This document records the main changes to the hartmannActor code.
 
 .. _changelog-v1_5:
-v1_5 (unreleased)
+v1_5 (2017-06-11)
 -----------------
 
 Added
