@@ -1,13 +1,10 @@
 #!/usr/bin/env python
 """An actor to generate and process hartmann frames."""
 
-import logging
-
 from twisted.internet import reactor
 
 import actorcore.Actor
 import opscore.actor.model
-import opscore.utility.sdss3logging as sdss3logging
 from hartmannActor import __version__, boss_collimate, myGlobals
 
 
@@ -42,7 +39,7 @@ class Hartmann(actorcore.Actor.Actor):
         actorcore.Actor.Actor.__init__(self, name, productName=productName, configFile=configFile)
 
         self.logger.setLevel(debugLevel)
-        #self.logger.propagate = True
+        # self.logger.propagate = True
 
         self.models = {}
         for actor in 'boss', :
@@ -51,9 +48,7 @@ class Hartmann(actorcore.Actor.Actor):
         m, b, constants, coeff = get_collimation_constants(self.config)
         myGlobals.hartmann = boss_collimate.Hartmann(self, m, b, constants, coeff)
 
-        #
         # Finally start the reactor
-        #
         self.run()
 
     def periodicStatus(self):
@@ -66,12 +61,8 @@ class Hartmann(actorcore.Actor.Actor):
         '''Runs this after connection is made to the hub'''
 
         # Schedule an update.
-        #
         self.periodicStatus()
 
 
-#
-# To work
-#
 if __name__ == '__main__':
     hartmann = Hartmann('hartmann', 'hartmannActor', debugLevel=5)
