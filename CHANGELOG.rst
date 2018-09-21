@@ -4,9 +4,19 @@
 Change Log
 ==========
 
-This document records the main changes to the hartmannActor code.
+.. _changelog-1.6.0:
+
+1.6.0 (unreleased)
+------------------
+
+Code health
+^^^^^^^^^^^
+* ``Bumpversion`` version control.
+* New version numbering scheme.
+
 
 .. _changelog-v1_5:
+
 v1_5 (2017-06-11)
 -----------------
 
@@ -17,20 +27,3 @@ Added
 Fixed
 ^^^^^
 * Ticket `#2705 <https://trac.sdss.org/ticket/2705>`_: SOP gotoField fails when no collimator move is required.
-
-.. x.y.z (unreleased)
-.. ------------------
-..
-.. A short description
-..
-.. Added
-.. ^^^^^
-.. * TBD
-..
-.. Changed
-.. ^^^^^^^
-.. * TBD
-..
-.. Fixed
-.. ^^^^^
-.. * TBD

@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 """An actor to generate and process hartmann frames."""
 
-import opscore.utility.sdss3logging as sdss3logging
 import logging
 
 from twisted.internet import reactor
 
-import opscore.actor.model
 import actorcore.Actor
+import opscore.actor.model
+import opscore.utility.sdss3logging as sdss3logging
+from hartmannActor import __version__, boss_collimate, myGlobals
 
-from hartmannActor import boss_collimate, myGlobals
 
 def get_collimation_constants(config):
     """Get the collimation constants from the config file."""
@@ -33,7 +33,10 @@ def get_collimation_constants(config):
 
 class Hartmann(actorcore.Actor.Actor):
     def __init__(self, name, productName=None, configFile=None, debugLevel=10):
+
         self.headURL = '$HeadURL$'
+        self.version = __version__
+
         actorcore.Actor.Actor.__init__(self, name, productName=productName, configFile=configFile)
 
         self.logger.setLevel(debugLevel)
