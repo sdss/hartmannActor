@@ -6,7 +6,7 @@
 # @License: BSD 3-clause (http://www.opensource.org/licenses/BSD-3-Clause)
 #
 # @Last modified by: José Sánchez-Gallego (gallegoj@uw.edu)
-# @Last modified time: 2018-09-21 11:12:41
+# @Last modified time: 2018-09-21 13:50:03
 
 """
 Computes spectrograph collimation focus from Hartmann mask exposures.
@@ -124,11 +124,13 @@ class OneCam(object):
                  expnum2,
                  indir,
                  test=False,
-                 noCheckImage=False):
+                 noCheckImage=False,
+                 bypass=[]):
         """
             Kwargs:
             noCheckImage (bool): skip the variance calculation check for whether
                                  there is light in the camera (useful for sparse pluggings).
+            bypass (list): bypasses to apply.
         """
         self.test = test
 
@@ -136,6 +138,7 @@ class OneCam(object):
         self.expnum1 = expnum1
         self.expnum2 = expnum2
         self.noCheckImage = noCheckImage
+        self.bypass = bypass
 
         # allowable focus tolerance (pixels): if offset is less than this, we're in focus.
         self.focustol = focustol
@@ -197,36 +200,50 @@ class OneCam(object):
         self.messages = []
 
     def __call__(self, cam):
-        """
-        Compute the collimation values for one camera.
+        """Compute the collimation values for one camera.
 
-        Args:
-            cam (str): the camera to perform the calculation on (r1, r2, b1, b2)
+        Parameters
+        ----------
+        cam : str
+            The camera to perform the calculation on (r1, r2, b1, b2)
+
         """
+
         if cam not in ['r1', 'r2', 'b1', 'b2']:
             self.add_msg('e', 'text="I do not recognize camera %s"' % cam)
             self.success = False
             return None
+
         self.cam = cam
+
         self.spec = 'sp' + cam[1]
 
         try:
+
             self._load_data(self.indir, self.expnum1, self.expnum2)
             self._do_gain_bias()
+
             if not self.noCheckImage:
                 self._check_images()
+
             self._find_shift()
             self._find_collimator_motion()
+
         # Have to handle exceptions here, because we're called via multiprocess.
         except HartError as e:
+
             self.add_msg('e', 'text="%s had error: %s"' % (self.cam, e))
             self.success = False
+
         except Exception as e:
+
             self.add_msg('e', 'text="!!!! Unknown error when processing Hartmanns! !!!!"')
             self.add_msg('e', 'text="%s reported %s: %s"' % (self.cam, type(e).__name__, e))
             self.success = False
-        return OneCamResult(cam, self.success, self.xshift, self.coeff, self.ibest, self.xoffset,
-                            self.piston, self.focused, self.messages)
+
+        return OneCamResult(cam, self.success, self.xshift, self.coeff,
+                            self.ibest, self.xoffset, self.piston, self.focused,
+                            self.messages)
 
     def add_msg(self, level, message):
         """Add a message to the message list to be returned."""
@@ -261,16 +278,24 @@ class OneCam(object):
         ffs = header.get('FFS', None)
         # 8 flat field screens: 0 for open, 1 for closed
         if ffs:
-            ffs_sum = sum_string(ffs)
-            if ffs_sum < 8:
-                self.add_msg(
-                    'w', "text='%s: Only %d of 8 flat-field petals closed: %s'" % (self.cam,
-                                                                                   ffs_sum, ffs))
-            if ffs_sum == 0:
+            try:
+                ffs_sum = sum_string(ffs)
+                if ffs_sum < 8:
+                    self.add_msg(
+                        'w', 'text="%s: Only %d of 8 flat-field petals closed: %s"' % (self.cam,
+                                                                                    ffs_sum, ffs))
+                if ffs_sum == 0:
+                    isBad = True
+            except:
+                self.add_msg('w', 'text="{}: failed reading FFS info"'.format(self.cam))
                 isBad = True
         else:
             self.add_msg('w', "text='%s: FFS not in FITS header!'" % self.cam)
             isBad = True
+
+        if 'ffs' in self.bypass and isBad:
+            self.add_msg('w', 'text="FFS check failed but FFS are bypassed."')
+            isBad = False
 
         Ne = header.get('NE', None)
         HgCd = header.get('HGCD', None)
@@ -526,36 +551,49 @@ class Hartmann(object):
         # Can't use update_status here, as we don't necessarily have a cmd available.
         myGlobals.hartmannStatus = 'initialized'
 
-    def __call__(self,
-                 cmd,
-                 moveMotors=False,
-                 subFrame=True,
-                 ignoreResiduals=False,
-                 noCheckImage=False,
-                 plot=False,
-                 minBlueCorrection=False):
-        """
-        Take and reduce a pair of hartmann exposures.
+    def __call__(self, cmd, moveMotors=False, subFrame=True,
+                 ignoreResiduals=False, noCheckImage=False, plot=False,
+                 minBlueCorrection=False, bypass=None):
+        """Take and reduce a pair of hartmann exposures.
+
         Usually apply the recommended collimator moves.
 
-        Args:
-            cmd (Cmdr): the currently active Commander instance, for passing info/warn messages.
+        Parameters
+        ----------
+        cmd : Cmdr
+            The currently active Commander instance, for passing info/warn
+            messages.
+        moveMotors : bool
+            Apply the computed corrections.
+        subFrame : bool
+            Only readout a part of the chip.
+        ignoreResiduals : bool
+            Apply red moves regardless of resulting blue residuals.
+        noCheckImage : bool
+            Skip the variance calculation check for whether there is light in
+            the camera (useful for sparse pluggings).
+        plot : bool
+            Make a plot representing the calculation.
+        minBlueCorrection : bool
+            Calculates only the minimum blue ring correction needed to
+            get the focus within the tolerance level.
+        bypass : list or None
+            A list of strings with the bypasses to apply.
 
-        Kwargs:
-            moveMotors (bool): apply the computed corrections.
-            subFrame (bool): only readout a part of the chip.
-            ignoreResiduals (bool): apply red moves regardless of resulting blue residuals.
-            noCheckImage (bool): skip the variance calculation check for whether
-                                 there is light in the camera (useful for sparse pluggings).
-            plot (bool): make a plot representing the calculation.
-            minBlueCorrection (bool): calculates only the minimum blue ring correction needed to
-                                      get the focus within the tolerance level.
         """
+
         self.cmd = cmd
 
+        # Check bypass type
+        bypass = bypass or []
+        if not isinstance(bypass, list):
+            bypass = [bypass]
+
         try:
+
             # take the hartmann frames.
             exposureId = self.take_hartmanns(subFrame)
+
             # Perform the collimation calculations
             self.collimate(
                 exposureId[0],
@@ -563,13 +601,19 @@ class Hartmann(object):
                 ignoreResiduals=ignoreResiduals,
                 plot=plot,
                 noCheckImage=noCheckImage,
-                minBlueCorrection=minBlueCorrection)
+                minBlueCorrection=minBlueCorrection,
+                bypass=bypass)
+
             if self.success and moveMotors:
                 self._move_motors()
+
         except HartError as e:
+
             self.cmd.error('text="%s"' % e)
             self.success = False
+
         except Exception as e:
+
             self.cmd.error('text="Unhandled Exception when processing Hartmanns!"')
             self.cmd.error('text="%s"' % e)
             self.success = False
@@ -618,7 +662,8 @@ class Hartmann(object):
             expnum1,
             expnum2,
             indir,
-            noCheckImage=noCheckImage)
+            noCheckImage=noCheckImage,
+            bypass=self.bypass)
         results = pool.map(oneCam, docams)
         pool.close()
         pool.join()
@@ -631,33 +676,42 @@ class Hartmann(object):
 
         self._bundle_result(docams, results)
 
-    def collimate(self,
-                  expnum1,
-                  expnum2=None,
-                  indir=None,
-                  mjd=None,
-                  specs=['sp1', 'sp2'],
-                  test=False,
-                  ignoreResiduals=False,
-                  plot=False,
-                  cmd=None,
-                  noCheckImage=False,
-                  minBlueCorrection=False):
-        """
-        Compute the spectrograph collimation focus from Hartmann mask exposures.
+    def collimate(self, expnum1, expnum2=None, indir=None, mjd=None,
+                  specs=['sp1', 'sp2'], test=False, ignoreResiduals=False,
+                  plot=False, cmd=None, noCheckImage=False,
+                  minBlueCorrection=False, bypass=None):
+        """Compute the spectrograph collimation focus from Hartmann exposures.
 
-        expnum1: first exposure number of raw sdR file (integer).
-        expnum2: second exposure number (default: expnum1+1)
-        indir:   directory where the exposures are located.
-        mjd:     MJD of exposures in /data directory.
-        spec:    spectrograph(s) to collimate ('sp1','sp2',['sp1','sp2'])
-        test:    If True, we are trying to determine the collimation parameters,
-                 so ignore 'b' parameter.
-        ignoreResiduals: apply red moves even if blue residuals are too high.
-        plot:    If True, save a plot of the best fit collimation.
-        minBlueCorrection: if True, calculates the minimum blue correction needed to get in focus.
-        cmd:     command handler
+        Parameters
+        ----------
+        expnum1 : int
+            First exposure number of raw sdR file.
+        expnum2 : int or None
+            Second exposure number (if `None`: expnum1 + 1)
+        indir : str
+            Directory where the exposures are located.
+        mjd : int
+            MJD of exposures in /data directory.
+        spec : str
+            Spectrograph(s) to collimate ('sp1','sp2',['sp1','sp2'])
+        test : bool
+            If True, we are trying to determine the collimation parameters,
+            so ignore 'b' parameter.
+        ignoreResiduals : bool
+            Apply red moves even if blue residuals are too high.
+        plot : bool
+            If True, save a plot of the best fit collimation.
+        minBlueCorrection : bool
+            If True, calculates the minimum blue correction needed to
+            get in focus.
+        cmd : Cmdr
+            Command handler
+        bypass : list or None
+            Bypasses to apply.
+
         """
+
+        self.bypass = bypass or []
 
         self.test = test
         if cmd is not None:

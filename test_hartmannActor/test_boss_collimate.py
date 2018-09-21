@@ -80,6 +80,8 @@ bothRight2 = 'sdR-r2-00169555.fit.gz'
 # TBD: be nice to have files with these conditions for oneCam.bad_header()
 noFFS = None
 notHartmann = None
+badFFS_1 = '/data/spectro/58245/sdR-b2-00268179.fit.gz'
+badFFS_2 = '/data/spectro/58245/sdR-b2-00268180.fit.gz'
 
 # exposures with no light in them, see ticket #2304.
 noLight1 = '/data/spectro/57081/sdR-r2-195564.fit.gz'
@@ -190,6 +192,7 @@ class TestOneCam(hartmannTester.HartmannTester, unittest.TestCase):
         self.cam = 'r2'
         self.oneCam.spec = self.spec
         self.oneCam.cam = self.cam
+        self.oneCam.bypass = []
 
     def _check_Hartmann_header(self, filename, expect, indir=data_dir):
         header = pyfits.getheader(os.path.join(indir, filename))
@@ -236,6 +239,16 @@ class TestOneCam(hartmannTester.HartmannTester, unittest.TestCase):
     def test_bad_header_not_Hartmann(self):
         header = pyfits.getheader(data_dir + notHartmann)
         self._bad_header(header, True, 1)
+
+    def test_bad_header_ffs(self):
+        header = pyfits.getheader(badFFS_1)
+        with self.assertRaises(ValueError):
+            self._bad_header(header, True, 1)
+
+    def test_bad_header_ffs_bypassed(self):
+        header = pyfits.getheader(badFFS_1)
+        self.oneCam.bypass = ['ffs']
+        self._bad_header(header, False, 2)
 
     def _load_data(self, expnum1, expnum2, indir=data_dir):
         self.oneCam.cam = 'r2'
@@ -419,6 +432,7 @@ class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
         self.assertFalse(self.hart.success)
         # NOTE: No good way to test the message levels due to multiprocessing
         # self._check_cmd(0,nInfo,nWarn,nErr,False)
+
     def test_no_Ne(self):
         """Test with a file that had all Ne lamps off."""
         self._lamps_tester(0, 4, 5, NeOff1)
@@ -438,6 +452,7 @@ class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
         self.assertFalse(self.hart.success)
         # NOTE: No good way to test the message levels due to multiprocessing
         # self._check_cmd(0,0,0,4,False)
+
     def test_both_left(self):
         """Test with a file where both members of the pair had Left Hartmanns."""
         self._mask_tester(bothLeft1)
@@ -512,6 +527,28 @@ class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
 
         sp1BResMin = self.hart.bres_min['sp1']
         self.assertAlmostEqual(sp1BResMin, 1.865203762)
+
+    def test_collimate_bad_ffs(self):
+        """Tests collimate with images with bad FFS headers."""
+
+        exp1 = get_expnum(badFFS_1)
+        exp2 = get_expnum(badFFS_2)
+        badFFS_dir = os.path.dirname(badFFS_1)
+
+        self.hart.collimate(exp1, exp2, indir=badFFS_dir, cmd=self.cmd, plot=False)
+
+        self.assertFalse(self.hart.success)
+
+    def test_collimate_bad_ffs_bypassed(self):
+        """Tests collimate with FFS bypass."""
+
+        exp1 = get_expnum(badFFS_1)
+        exp2 = get_expnum(badFFS_2)
+        badFFS_dir = os.path.dirname(badFFS_1)
+
+        self.hart.collimate(exp1, exp2, indir=badFFS_dir, cmd=self.cmd, plot=False, bypass=['ffs'])
+
+        self.assertTrue(self.hart.success)
 
     def test_call_exposure_fails(self):
         """Test collimating where the first file fails"""

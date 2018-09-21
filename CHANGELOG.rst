@@ -9,6 +9,10 @@ Change Log
 1.6.0 (unreleased)
 ------------------
 
+Added
+^^^^^
+* Ticket `#2867 <https://trac.sdss.org/ticket/2867>`_: implement bypass keyword to skip certain checks. For now only ``bypass="ffs"`` is accepted, which prevents a collimation to fail if the FFS keywords in the image header are badly formatted.
+
 Code health
 ^^^^^^^^^^^
 * ``Bumpversion`` version control.

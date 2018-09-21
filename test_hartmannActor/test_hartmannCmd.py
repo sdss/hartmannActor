@@ -92,6 +92,11 @@ class TestHartmannCmd(HartmannCmdTester, unittest.TestCase):
         self._recompute(
             'id={expnum1} mjd={mjd} noCheckImage'.format(**expect), expect, success=True)
 
+    def test_recompute_bypass(self):
+        expect = {'expnum1': 1, 'mjd': 12345, 'bypass': ['ffs']}
+        self._recompute('id={expnum1} mjd={mjd} bypass="ffs"'.format(**expect),
+                        expect, success=True)
+
     def _collimate(self, args, expect, success=True):
         hart = FakeHartmann(success)
         myGlobals.hartmann = hart
@@ -101,6 +106,7 @@ class TestHartmannCmd(HartmannCmdTester, unittest.TestCase):
         self.assertEqual(hart.kwargs['subFrame'], expect.get('subFrame', True))
         self.assertEqual(hart.kwargs['ignoreResiduals'], expect.get('ignoreResiduals', False))
         self.assertEqual(hart.kwargs['noCheckImage'], expect.get('noCheckImage', False))
+        self.assertEqual(hart.kwargs['bypass'], expect.get('bypass', []))
 
     def test_collimate_ok(self):
         expect = {}
@@ -126,6 +132,14 @@ class TestHartmannCmd(HartmannCmdTester, unittest.TestCase):
     def test_noCheckImage(self):
         expect = {'noCheckImage': True}
         self._collimate('noCheckImage', expect, success=True)
+
+    def test_collimate_bypass_ffs(self):
+        expect = {'bypass': ['ffs']}
+        self._collimate('bypass="ffs"', expect, success=True)
+
+    def test_collimate_bypass_multiple(self):
+        expect = {'bypass': ['ffs', 'hola']}
+        self._collimate('bypass="ffs,hola"', expect, success=True)
 
 
 if __name__ == '__main__':

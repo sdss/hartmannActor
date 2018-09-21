@@ -40,15 +40,17 @@ class hartmannCmd(object):
             keys.Key('minBlueCorrection',
                      help='if set, the calculated correction for the blue ring will be '
                           'the minimum to get in the tolerance range.'),
+            keys.Key('bypass', types.String(),
+                     help='a list of checks and systems to bypass'),
         )
 
         self.vocab = [
             ('ping', '', self.ping),
             ('status', '', self.status),
-            ('collimate',
-             '[noCorrect] [noSubframe] [ignoreResiduals] [noCheckImage] [minBlueCorrection]',
-             self.collimate),
-            ('recompute', '<id> [<id2>] [<mjd>] [noCorrect] [noCheckImage]', self.recompute),
+            ('collimate', '[noCorrect] [noSubframe] [ignoreResiduals] [noCheckImage] '
+                          '[minBlueCorrection] [<bypass>]', self.collimate),
+            ('recompute', '<id> [<id2>] [<mjd>] [noCorrect] '
+                          '[noCheckImage] [<bypass>]', self.recompute),
         ]
 
     def ping(self, cmd):
@@ -82,8 +84,14 @@ class hartmannCmd(object):
         moveMotors = 'noCorrect' not in keywords
         noCheckImage = 'noCheckImage' in keywords
 
+        if 'bypass' in cmd.cmd.keywords:
+            bypass = cmd.cmd.keywords['bypass'].values[0].split(',')
+        else:
+            bypass = []
+
         hartmann.reinit()
-        hartmann.collimate(expnum1, expnum2=expnum2, mjd=mjd, cmd=cmd, noCheckImage=noCheckImage)
+        hartmann.collimate(expnum1, expnum2=expnum2, mjd=mjd, cmd=cmd,
+                           noCheckImage=noCheckImage, bypass=bypass)
         if hartmann.success and moveMotors:
             hartmann.move_motors()
 
@@ -108,19 +116,24 @@ class hartmannCmd(object):
         noCheckImage = 'noCheckImage' in cmd.cmd.keywords
         minBlueCorrection = 'minBlueCorrection' in cmd.cmd.keywords
 
+        if 'bypass' in cmd.cmd.keywords:
+            bypass = cmd.cmd.keywords['bypass'].values[0].split(',')
+        else:
+            bypass = []
+
         if ignoreResiduals and not moveMotors:
             cmd.fail('text=ignoreResiduals and noCorrect are mutually exclusive!')
             return
 
         hartmann.reinit()
 
-        hartmann(
-            cmd,
-            moveMotors=moveMotors,
-            subFrame=subFrame,
-            ignoreResiduals=ignoreResiduals,
-            noCheckImage=noCheckImage,
-            minBlueCorrection=minBlueCorrection)
+        hartmann(cmd,
+                 moveMotors=moveMotors,
+                 subFrame=subFrame,
+                 ignoreResiduals=ignoreResiduals,
+                 noCheckImage=noCheckImage,
+                 minBlueCorrection=minBlueCorrection,
+                 bypass=bypass)
 
         if hartmann.success:
             cmd.finish()
