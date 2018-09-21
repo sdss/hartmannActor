@@ -13,6 +13,7 @@ Code health
 ^^^^^^^^^^^
 * ``Bumpversion`` version control.
 * New version numbering scheme.
+* Applied ``isort``, ``yapf``, and ``unify`` to all files.
 
 
 .. _changelog-v1_5:

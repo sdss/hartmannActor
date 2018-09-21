@@ -18,20 +18,22 @@ def get_collimation_constants(config):
     constants = {}
     coeff = {}
     for x in config.options('m'):
-        m[x] = config.getfloat('m',x)
+        m[x] = config.getfloat('m', x)
 
     for x in config.options('b'):
-        b[x] = config.getfloat('b',x)
+        b[x] = config.getfloat('b', x)
 
     for x in config.options('constants'):
-        constants[x] = config.getfloat('constants',x)
+        constants[x] = config.getfloat('constants', x)
 
     for x in config.options('coeff'):
-        coeff[x] = config.getfloat('coeff',x)
+        coeff[x] = config.getfloat('coeff', x)
 
-    return m,b,constants, coeff
+    return m, b, constants, coeff
+
 
 class Hartmann(actorcore.Actor.Actor):
+
     def __init__(self, name, productName=None, configFile=None, debugLevel=10):
 
         self.headURL = '$HeadURL$'
@@ -43,10 +45,10 @@ class Hartmann(actorcore.Actor.Actor):
         #self.logger.propagate = True
 
         self.models = {}
-        for actor in 'boss',:
+        for actor in 'boss', :
             self.models[actor] = opscore.actor.model.Model(actor)
 
-        m,b,constants,coeff = get_collimation_constants(self.config)
+        m, b, constants, coeff = get_collimation_constants(self.config)
         myGlobals.hartmann = boss_collimate.Hartmann(self, m, b, constants, coeff)
 
         #
@@ -57,7 +59,7 @@ class Hartmann(actorcore.Actor.Actor):
     def periodicStatus(self):
         """ """
 
-        self.callCommand("status")
+        self.callCommand('status')
         reactor.callLater(3600, self.periodicStatus)
 
     def connectionMade(self):
@@ -66,6 +68,7 @@ class Hartmann(actorcore.Actor.Actor):
         # Schedule an update.
         #
         self.periodicStatus()
+
 
 #
 # To work

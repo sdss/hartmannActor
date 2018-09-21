@@ -1,10 +1,7 @@
 import distutils
-from distutils.core import setup, Extension
+import os
+from distutils.core import Extension, setup
 
 import sdss3tools
-import os
 
-sdss3tools.setup(
-        description = "SDSS-3 APO actor.",
-        )
-
+sdss3tools.setup(description='SDSS-3 APO actor.', )
