@@ -6,7 +6,7 @@
 # @License: BSD 3-clause (http://www.opensource.org/licenses/BSD-3-Clause)
 #
 # @Last modified by: José Sánchez-Gallego (gallegoj@uw.edu)
-# @Last modified time: 2018-09-21 10:26:37
+# @Last modified time: 2018-09-21 11:12:41
 
 """
 Computes spectrograph collimation focus from Hartmann mask exposures.
@@ -144,8 +144,8 @@ class OneCam(object):
         self.maxshift = 2
 
         # collimator motion constants for the different regions.
-        self.m = m  #{'b1':1.,'b2':1.,'r1':1.,'r2':1.}
-        self.b = b  #{'b1':0.129,'b2':0.00,'r1':-0.229,'r2':0.068}
+        self.m = m  # {'b1':1.,'b2':1.,'r1':1.,'r2':1.}
+        self.b = b  # {'b1':0.129,'b2':0.00,'r1':-0.229,'r2':0.068}
 
         # steps per degree for the blue ring.
         self.bsteps = bsteps
@@ -254,7 +254,8 @@ class OneCam(object):
         petals closed.
         If the wrong number of petals are closed, then emit a warning and return False.
         """
-        sum_string = lambda field: sum([int(x) for x in field.split()])
+
+        sum_string = lambda field: sum([int(x) for x in field.split()])  # noqa
 
         isBad = False
         ffs = header.get('FFS', None)
@@ -420,9 +421,15 @@ class OneCam(object):
         filtered1 = interpolation.spline_filter(subimg1)
         filtered2 = interpolation.spline_filter(subimg2)
         for i in range(nshift):
-            #self.coeff[i] = (subimg1*interpolation.shift(subimg2,[xshift[i],0],order=order)*mask).sum()
-            #self.coeff[i] = (filtered1*interpolation.shift(filtered2,[xshift[i],0],order=order,prefilter=False)*mask).sum()
+            # self.coeff[i] = (subimg1 * interpolation.shift(subimg2,
+            #                                                [xshift[i], 0],
+            #                                                order=order) * mask).sum()
+            # self.coeff[i] = (filtered1 * interpolation.shift(filtered2,
+            #                                                  [xshift[i], 0],
+            #                                                  order=order,
+            #                                                  prefilter=False) * mask).sum()
             self.coeff[i] = calc_shift(xshift[i], filtered1, filtered2, mask)
+
         ibest = self.coeff.argmax()
         self.ibest = ibest  # save for plotting
         self.xoffset = xshift[ibest]
@@ -644,7 +651,8 @@ class Hartmann(object):
         indir:   directory where the exposures are located.
         mjd:     MJD of exposures in /data directory.
         spec:    spectrograph(s) to collimate ('sp1','sp2',['sp1','sp2'])
-        test:    If True, we are trying to determine the collimation parameters, so ignore 'b' parameter.
+        test:    If True, we are trying to determine the collimation parameters,
+                 so ignore 'b' parameter.
         ignoreResiduals: apply red moves even if blue residuals are too high.
         plot:    If True, save a plot of the best fit collimation.
         minBlueCorrection: if True, calculates the minimum blue correction needed to get in focus.
