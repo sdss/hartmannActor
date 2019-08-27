@@ -6,7 +6,7 @@
 # @License: BSD 3-clause (http://www.opensource.org/licenses/BSD-3-Clause)
 #
 # @Last modified by: José Sánchez-Gallego (gallegoj@uw.edu)
-# @Last modified time: 2019-08-26 22:31:35
+# @Last modified time: 2019-08-26 22:34:41
 
 """
 Computes spectrograph collimation focus from Hartmann mask exposures.
@@ -603,7 +603,7 @@ class Hartmann(object):
                 noCheckImage=noCheckImage,
                 minBlueCorrection=minBlueCorrection,
                 bypass=bypass,
-                specs=myGlobals['spec']['specs'])
+                specs=myGlobals.config['spec']['specs'])
 
             if self.success and moveMotors:
                 self._move_motors()
