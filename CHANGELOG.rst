@@ -4,6 +4,16 @@
 Change Log
 ==========
 
+.. _changelog-1.6.1:
+
+1.6.1 (unreleased)
+------------------
+
+Added
+^^^^^
+* New configuration option to set the available spectrographs.
+
+
 .. _changelog-1.6.0:
 
 1.6.0 (2018-09-26)
