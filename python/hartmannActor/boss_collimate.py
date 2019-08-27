@@ -6,7 +6,7 @@
 # @License: BSD 3-clause (http://www.opensource.org/licenses/BSD-3-Clause)
 #
 # @Last modified by: José Sánchez-Gallego (gallegoj@uw.edu)
-# @Last modified time: 2019-08-26 22:34:41
+# @Last modified time: 2019-08-26 22:47:00
 
 """
 Computes spectrograph collimation focus from Hartmann mask exposures.
@@ -553,7 +553,7 @@ class Hartmann(object):
 
     def __call__(self, cmd, moveMotors=False, subFrame=True,
                  ignoreResiduals=False, noCheckImage=False, plot=False,
-                 minBlueCorrection=False, bypass=None):
+                 minBlueCorrection=False, bypass=None, specs=['sp1', 'sp2']):
         """Take and reduce a pair of hartmann exposures.
 
         Usually apply the recommended collimator moves.
@@ -579,6 +579,8 @@ class Hartmann(object):
             get the focus within the tolerance level.
         bypass : list or None
             A list of strings with the bypasses to apply.
+        specs : str
+            Spectrograph(s) to collimate ('sp1','sp2')
 
         """
 
@@ -603,7 +605,7 @@ class Hartmann(object):
                 noCheckImage=noCheckImage,
                 minBlueCorrection=minBlueCorrection,
                 bypass=bypass,
-                specs=myGlobals.config['spec']['specs'])
+                specs=specs)
 
             if self.success and moveMotors:
                 self._move_motors()
@@ -693,8 +695,8 @@ class Hartmann(object):
             Directory where the exposures are located.
         mjd : int
             MJD of exposures in /data directory.
-        spec : str
-            Spectrograph(s) to collimate ('sp1','sp2',['sp1','sp2'])
+        specs : str
+            Spectrograph(s) to collimate ('sp1','sp2')
         test : bool
             If True, we are trying to determine the collimation parameters,
             so ignore 'b' parameter.

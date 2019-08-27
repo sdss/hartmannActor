@@ -134,7 +134,8 @@ class hartmannCmd(object):
                  ignoreResiduals=ignoreResiduals,
                  noCheckImage=noCheckImage,
                  minBlueCorrection=minBlueCorrection,
-                 bypass=bypass)
+                 bypass=bypass,
+                 specs=myGlobals.config['spec']['specs'])
 
         if hartmann.success:
             cmd.finish()
