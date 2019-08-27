@@ -92,7 +92,7 @@ class hartmannCmd(object):
         hartmann.reinit()
         hartmann.collimate(expnum1, expnum2=expnum2, mjd=mjd, cmd=cmd,
                            noCheckImage=noCheckImage, bypass=bypass,
-                           specs=myGlobals.config['spec']['specs'])
+                           specs=myGlobals.config.options('spec').get('specs'))
         if hartmann.success and moveMotors:
             hartmann.move_motors()
 
@@ -135,7 +135,7 @@ class hartmannCmd(object):
                  noCheckImage=noCheckImage,
                  minBlueCorrection=minBlueCorrection,
                  bypass=bypass,
-                 specs=myGlobals.config['spec']['specs'])
+                 specs=myGlobals.config.options('spec').get('specs'))
 
         if hartmann.success:
             cmd.finish()
