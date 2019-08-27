@@ -6,7 +6,7 @@
 # @License: BSD 3-clause (http://www.opensource.org/licenses/BSD-3-Clause)
 #
 # @Last modified by: José Sánchez-Gallego (gallegoj@uw.edu)
-# @Last modified time: 2019-08-26 22:10:23
+# @Last modified time: 2019-08-26 22:17:40
 
 """
 Computes spectrograph collimation focus from Hartmann mask exposures.
@@ -726,23 +726,20 @@ class Hartmann(object):
 
         update_status(self.cmd, 'waiting on files')
 
+        spec_ids = [int(spec[-1]) for spec in specs]
+
+        files1 = [
+            get_filename(indir, '%s%d' % (s, n), expnum1) for s in ['b', 'r'] for n in spec_ids
+        ]
+        files2 = [
+            get_filename(indir, '%s%d' % (s, n), expnum2) for s in ['b', 'r'] for n in spec_ids
+        ]
+
         docams = []
-
         if 'spec1' in specs:
-            files1 = [
-                get_filename(indir, '%s%d' % (s, n), expnum1) for s in ['b', 'r'] for n in [1, 2]
-            ]
             docams += ['r1', 'b1']
-        else:
-            files1 = []
-
         if 'spec2' in specs:
-            files2 = [
-                get_filename(indir, '%s%d' % (s, n), expnum2) for s in ['b', 'r'] for n in [1, 2]
-            ]
             docams += ['r2', 'b2']
-        else:
-            files2 = []
 
         files_missing = self.file_waiter(files1 + files2)
         if files_missing is not None:
