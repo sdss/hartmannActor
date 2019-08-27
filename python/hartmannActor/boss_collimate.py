@@ -6,7 +6,7 @@
 # @License: BSD 3-clause (http://www.opensource.org/licenses/BSD-3-Clause)
 #
 # @Last modified by: José Sánchez-Gallego (gallegoj@uw.edu)
-# @Last modified time: 2018-09-21 13:50:03
+# @Last modified time: 2019-08-26 21:59:32
 
 """
 Computes spectrograph collimation focus from Hartmann mask exposures.
@@ -738,7 +738,12 @@ class Hartmann(object):
 
         update_status(self.cmd, 'processing')
 
-        docams = ['r1', 'r2', 'b1', 'b2']
+        docams = []
+        if 'spec1' in specs:
+            docams += ['r1', 'b1']
+        if 'spec2' in specs:
+            docams += ['r2', 'b2']
+
         try:
             self._collimate(expnum1, expnum2, indir, docams, noCheckImage)
         except Exception as e:
