@@ -6,7 +6,7 @@ Change Log
 
 .. _changelog-1.6.1:
 
-1.6.1 (unreleased)
+1.6.1 (2019-09-17)
 ------------------
 
 Added
