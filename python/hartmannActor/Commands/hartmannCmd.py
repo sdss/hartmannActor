@@ -63,7 +63,7 @@ class hartmannCmd(object):
 
         self.actor.sendVersionKey(cmd)
         cmd.inform('status=%s' % myGlobals.hartmannStatus)
-        cmd.inform('specs=%s' % ','.join(self.actor.specs))
+        cmd.inform('specs=%s' % ','.join(myGlobals.specs))
 
         if finish:
             cmd.finish()
@@ -94,7 +94,7 @@ class hartmannCmd(object):
         hartmann.reinit()
         hartmann.collimate(expnum1, expnum2=expnum2, mjd=mjd, cmd=cmd,
                            noCheckImage=noCheckImage, bypass=bypass,
-                           specs=self.actor.specs)
+                           specs=myGlobals.specs)
         if hartmann.success and moveMotors:
             hartmann.move_motors()
 
@@ -137,7 +137,7 @@ class hartmannCmd(object):
                  noCheckImage=noCheckImage,
                  minBlueCorrection=minBlueCorrection,
                  bypass=bypass,
-                 specs=self.actor.specs)
+                 specs=myGlobals.specs)
 
         if hartmann.success:
             cmd.finish()

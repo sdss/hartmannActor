@@ -50,8 +50,8 @@ class Hartmann(actorcore.Actor.Actor):
         m, b, constants, coeff = get_collimation_constants(self.config)
         myGlobals.hartmann = boss_collimate.Hartmann(self, m, b, constants, coeff)
 
-        # Spectrographs to process
-        self.specs = self.config.get('spec', 'specs').split(' ')
+        # Spectrographs to process.
+        myGlobals.specs = self.config.get('spec', 'specs').split(' ')
 
         # Finally start the reactor
         self.run()
