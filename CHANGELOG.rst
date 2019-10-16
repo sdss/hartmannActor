@@ -9,6 +9,10 @@ Change Log
 1.6.2 (2019-10-16)
 ------------------
 
+Added
+^^^^^
+* Output spectrographs in use on ``status``.
+
 Code health
 ^^^^^^^^^^^
 * Move reading of spectrographs to use to ``HartmannActor`` and define an attribute there.

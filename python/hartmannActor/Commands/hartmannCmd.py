@@ -63,6 +63,8 @@ class hartmannCmd(object):
 
         self.actor.sendVersionKey(cmd)
         cmd.inform('status=%s' % myGlobals.hartmannStatus)
+        cmd.inform('specs=%s' % ','.join(self.actor.specs))
+
         if finish:
             cmd.finish()
 
