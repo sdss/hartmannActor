@@ -575,7 +575,7 @@ class Hartmann(object):
         self.cmd = cmd
 
         specs = myGlobals.specs
-        self.cmd.inform('text="Using spectrographs {}"'.format(', '.join(specs)))
+        self.cmd.inform('text="Using spectrographs: {}"'.format(', '.join(specs)))
 
         # Check bypass type
         bypass = bypass or []
@@ -707,7 +707,7 @@ class Hartmann(object):
         cameras = cameras or myGlobals.cameras
         cameras = [camera for camera in cameras if int(camera[-1]) in spec_ids]
 
-        self.cmd.inform('text="Processing cameras {}"'.format(', '.join(cameras)))
+        self.cmd.inform('text="Processing cameras: {}"'.format(', '.join(cameras)))
 
         self.bypass = bypass or []
 
