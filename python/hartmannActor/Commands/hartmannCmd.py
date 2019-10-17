@@ -42,7 +42,7 @@ class hartmannCmd(object):
                           'the minimum to get in the tolerance range.'),
             keys.Key('bypass', types.String(),
                      help='a list of checks and systems to bypass'),
-            keys.Key('cameras', types.String() * (1, ), help='a list of cameras to process'),
+            keys.Key('cameras', types.String(), help='a list of cameras to process'),
         )
 
         self.vocab = [
@@ -87,7 +87,7 @@ class hartmannCmd(object):
 
         moveMotors = 'noCorrect' not in keywords
         noCheckImage = 'noCheckImage' in keywords
-        cameras = 'cameras' in keywords
+        cameras = keywords['cameras'].values[0].split(',') if 'cameras' in keywords else None
 
         if 'bypass' in cmd.cmd.keywords:
             bypass = cmd.cmd.keywords['bypass'].values[0].split(',')
@@ -115,16 +115,18 @@ class hartmannCmd(object):
 
         """
 
-        hartmann = myGlobals.hartmann
-        moveMotors = 'noCorrect' not in cmd.cmd.keywords
-        subFrame = 'noSubframe' not in cmd.cmd.keywords
-        ignoreResiduals = 'ignoreResiduals' in cmd.cmd.keywords
-        noCheckImage = 'noCheckImage' in cmd.cmd.keywords
-        minBlueCorrection = 'minBlueCorrection' in cmd.cmd.keywords
-        cameras = 'cameras' in cmd.cmd.keywords
+        keywords = cmd.cmd.keywords
 
-        if 'bypass' in cmd.cmd.keywords:
-            bypass = cmd.cmd.keywords['bypass'].values[0].split(',')
+        hartmann = myGlobals.hartmann
+        moveMotors = 'noCorrect' not in keywords
+        subFrame = 'noSubframe' not in keywords
+        ignoreResiduals = 'ignoreResiduals' in keywords
+        noCheckImage = 'noCheckImage' in keywords
+        minBlueCorrection = 'minBlueCorrection' in keywords
+        cameras = keywords['cameras'].values[0].split(',') if 'cameras' in keywords else None
+
+        if 'bypass' in keywords:
+            bypass = keywords['bypass'].values[0].split(',')
         else:
             bypass = []
 
