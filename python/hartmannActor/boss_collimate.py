@@ -704,6 +704,9 @@ class Hartmann(object):
         cameras = cameras or myGlobals.cameras
         cameras = [camera for camera in cameras if int(camera[-1]) in spec_ids]
 
+        self.cmd.inform('text="Using spectrographs {}"'.format(', '.join(specs)))
+        self.cmd.inform('text="Using cameras {}"'.format(', '.join(cameras)))
+
         self.bypass = bypass or []
 
         self.test = test
