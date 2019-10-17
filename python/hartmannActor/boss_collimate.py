@@ -751,7 +751,7 @@ class Hartmann(object):
         update_status(self.cmd, 'exposing')
 
         exposureIds = []
-        timeLim = 90.0
+        timeLim = 120.0
         for side in 'left', 'right':
             window = 'window={0},{1}'.format(*self.subFrame) if subFrame else ''
             cmdStr = 'exposure arc hartmann=%s itime=4 %s %s' % (side, window,
