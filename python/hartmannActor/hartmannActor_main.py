@@ -52,6 +52,7 @@ class Hartmann(actorcore.Actor.Actor):
 
         # Spectrographs to process.
         myGlobals.specs = self.config.get('spec', 'specs').split(' ')
+        myGlobals.cameras = self.config.get('spec', 'cameras').split(' ')
 
         # Finally start the reactor
         self.run()

@@ -42,15 +42,16 @@ class hartmannCmd(object):
                           'the minimum to get in the tolerance range.'),
             keys.Key('bypass', types.String(),
                      help='a list of checks and systems to bypass'),
+            keys.Key('cameras', types.String() * (1, ), help='a list of cameras to process'),
         )
 
         self.vocab = [
             ('ping', '', self.ping),
             ('status', '', self.status),
             ('collimate', '[noCorrect] [noSubframe] [ignoreResiduals] [noCheckImage] '
-                          '[minBlueCorrection] [<bypass>]', self.collimate),
+                          '[minBlueCorrection] [<bypass>] [<cameras>]', self.collimate),
             ('recompute', '<id> [<id2>] [<mjd>] [noCorrect] '
-                          '[noCheckImage] [<bypass>]', self.recompute),
+                          '[noCheckImage] [<bypass>] [<cameras>]', self.recompute),
         ]
 
     def ping(self, cmd):
@@ -85,6 +86,7 @@ class hartmannCmd(object):
 
         moveMotors = 'noCorrect' not in keywords
         noCheckImage = 'noCheckImage' in keywords
+        cameras = 'cameras' in keywords
 
         if 'bypass' in cmd.cmd.keywords:
             bypass = cmd.cmd.keywords['bypass'].values[0].split(',')
@@ -94,7 +96,7 @@ class hartmannCmd(object):
         hartmann.reinit()
         hartmann.collimate(expnum1, expnum2=expnum2, mjd=mjd, cmd=cmd,
                            noCheckImage=noCheckImage, bypass=bypass,
-                           specs=myGlobals.specs)
+                           cameras=cameras)
         if hartmann.success and moveMotors:
             hartmann.move_motors()
 
@@ -118,6 +120,7 @@ class hartmannCmd(object):
         ignoreResiduals = 'ignoreResiduals' in cmd.cmd.keywords
         noCheckImage = 'noCheckImage' in cmd.cmd.keywords
         minBlueCorrection = 'minBlueCorrection' in cmd.cmd.keywords
+        cameras = 'cameras' in cmd.cmd.keywords
 
         if 'bypass' in cmd.cmd.keywords:
             bypass = cmd.cmd.keywords['bypass'].values[0].split(',')
@@ -137,7 +140,7 @@ class hartmannCmd(object):
                  noCheckImage=noCheckImage,
                  minBlueCorrection=minBlueCorrection,
                  bypass=bypass,
-                 specs=myGlobals.specs)
+                 cameras=cameras)
 
         if hartmann.success:
             cmd.finish()

@@ -4,9 +4,6 @@
 # @Author: José Sánchez-Gallego (gallegoj@uw.edu)
 # @Filename: boss_collimate.py
 # @License: BSD 3-clause (http://www.opensource.org/licenses/BSD-3-Clause)
-#
-# @Last modified by: José Sánchez-Gallego (gallegoj@uw.edu)
-# @Last modified time: 2019-08-26 23:13:34
 
 """
 Computes spectrograph collimation focus from Hartmann mask exposures.
@@ -114,24 +111,15 @@ class OneCamResult(object):
 class OneCam(object):
     """Collimate one camera."""
 
-    def __init__(self,
-                 m,
-                 b,
-                 bsteps,
-                 focustol,
-                 coeff,
-                 expnum1,
-                 expnum2,
-                 indir,
-                 test=False,
-                 noCheckImage=False,
-                 bypass=[]):
+    def __init__(self, m, b, bsteps, focustol, coeff, expnum1, expnum2, indir,
+                 test=False, noCheckImage=False, bypass=[]):
         """
             Kwargs:
             noCheckImage (bool): skip the variance calculation check for whether
                                  there is light in the camera (useful for sparse pluggings).
             bypass (list): bypasses to apply.
         """
+
         self.test = test
 
         self.indir = indir
@@ -542,7 +530,7 @@ class Hartmann(object):
     def reinit(self):
         self.success = True
         # final results go here
-        self.result = {'sp1': {'b': 0., 'r': 0.}, 'sp2': {'b': 0., 'r': 0.}}
+        self.result = {'sp1': {'b': np.nan, 'r': np.nan}, 'sp2': {'b': np.nan, 'r': np.nan}}
         self.full_result = {'sp1': {'b': None, 'r': None}, 'sp2': {'b': None, 'r': None}}
         self.moves = {'sp1': 0, 'sp2': 0}
         self.residuals = {'sp1': [0, 0., ''], 'sp2': [0, 0., '']}
@@ -553,7 +541,7 @@ class Hartmann(object):
 
     def __call__(self, cmd, moveMotors=False, subFrame=True,
                  ignoreResiduals=False, noCheckImage=False, plot=False,
-                 minBlueCorrection=False, bypass=None, specs=['sp1', 'sp2']):
+                 minBlueCorrection=False, bypass=None, cameras=None):
         """Take and reduce a pair of hartmann exposures.
 
         Usually apply the recommended collimator moves.
@@ -579,8 +567,8 @@ class Hartmann(object):
             get the focus within the tolerance level.
         bypass : list or None
             A list of strings with the bypasses to apply.
-        specs : str
-            Spectrograph(s) to collimate ('sp1','sp2')
+        cameras : list
+            Cameras to process.
 
         """
 
@@ -605,7 +593,7 @@ class Hartmann(object):
                 noCheckImage=noCheckImage,
                 minBlueCorrection=minBlueCorrection,
                 bypass=bypass,
-                specs=specs)
+                cameras=cameras)
 
             if self.success and moveMotors:
                 self._move_motors()
@@ -625,6 +613,7 @@ class Hartmann(object):
 
     def _bundle_result(self, cams, results):
         """Return dict of spec:{cam:piston}."""
+
         for cam, result in zip(cams, results):
             self.full_result['sp' + cam[1]][cam[0]] = result
             self.result['sp' + cam[1]][cam[0]] = result.piston
@@ -654,20 +643,15 @@ class Hartmann(object):
 
     def _collimate(self, expnum1, expnum2, indir, docams, noCheckImage):
         """The guts of the collimation, to be wrapped in a try:except block."""
+
         # pool = ThreadPool(len(docams)) # NOTE: for testing with threads instead of processes
         pool = Pool(len(docams))
-        oneCam = OneCam(
-            self.m,
-            self.b,
-            self.bsteps,
-            self.focustol,
-            self.coeff,
-            expnum1,
-            expnum2,
-            indir,
-            noCheckImage=noCheckImage,
-            bypass=self.bypass)
+
+        oneCam = OneCam(self.m, self.b, self.bsteps, self.focustol, self.coeff,
+                        expnum1, expnum2, indir, noCheckImage=noCheckImage, bypass=self.bypass)
+
         results = pool.map(oneCam, docams)
+
         pool.close()
         pool.join()
 
@@ -680,7 +664,7 @@ class Hartmann(object):
         self._bundle_result(docams, results)
 
     def collimate(self, expnum1, expnum2=None, indir=None, mjd=None,
-                  specs=['sp1', 'sp2'], test=False, ignoreResiduals=False,
+                  cameras=None, test=False, ignoreResiduals=False,
                   plot=False, cmd=None, noCheckImage=False,
                   minBlueCorrection=False, bypass=None):
         """Compute the spectrograph collimation focus from Hartmann exposures.
@@ -695,8 +679,8 @@ class Hartmann(object):
             Directory where the exposures are located.
         mjd : int
             MJD of exposures in /data directory.
-        specs : str
-            Spectrograph(s) to collimate ('sp1','sp2')
+        cameras : list
+            Cameras to process.
         test : bool
             If True, we are trying to determine the collimation parameters,
             so ignore 'b' parameter.
@@ -714,6 +698,12 @@ class Hartmann(object):
 
         """
 
+        specs = myGlobals.specs
+        spec_ids = [int(spec[-1]) for spec in specs]
+
+        cameras = cameras or myGlobals.cameras
+        cameras = [camera for camera in cameras if int(camera[-1]) in spec_ids]
+
         self.bypass = bypass or []
 
         self.test = test
@@ -729,38 +719,26 @@ class Hartmann(object):
 
         update_status(self.cmd, 'waiting on files')
 
-        spec_ids = [int(spec[-1]) for spec in specs]
-
-        files1 = [
-            get_filename(indir, '%s%d' % (s, n), expnum1) for s in ['b', 'r'] for n in spec_ids
-        ]
-        files2 = [
-            get_filename(indir, '%s%d' % (s, n), expnum2) for s in ['b', 'r'] for n in spec_ids
-        ]
-
-        docams = []
-        if 'sp1' in specs:
-            docams += ['r1', 'b1']
-        if 'sp2' in specs:
-            docams += ['r2', 'b2']
+        files1 = [get_filename(indir, '%s' % cam, expnum1) for cam in cameras]
+        files2 = [get_filename(indir, '%s' % cam, expnum2) for cam in cameras]
 
         files_missing = self.file_waiter(files1 + files2)
         if files_missing is not None:
-            raise HartError(
-                'Cannot complete collimation, these files not found: %s' % ','.join(files_missing))
+            raise HartError('Cannot complete collimation, these files '
+                            'not found: %s' % ','.join(files_missing))
 
         update_status(self.cmd, 'processing')
 
         try:
-            self._collimate(expnum1, expnum2, indir, docams, noCheckImage)
+            self._collimate(expnum1, expnum2, indir, cameras, noCheckImage)
         except Exception as e:
             self.success = False
             self.cmd.error('text="Collimation calculation failed! %s"' % e)
             return
         else:
             for spec in specs:
-                self._mean_moves(
-                    spec, ignoreResiduals=ignoreResiduals, minBlueCorrection=minBlueCorrection)
+                self._mean_moves(spec, ignoreResiduals=ignoreResiduals,
+                                 minBlueCorrection=minBlueCorrection)
             if plot:
                 self.make_plot(expnum1, expnum2)
 
@@ -796,7 +774,12 @@ class Hartmann(object):
         """Compute the mean movement and residuals for this spectrograph,
         after r&b moves have been determined."""
 
-        avg = sum(self.result[spec].values()) / 2.
+        if np.all(np.isnan(self.result[spec])):
+            self.cmd.warn('text="No camera information available for {}."'.format(spec))
+            self.success = False
+            return
+
+        avg = np.nanmean(self.result[spec].values())
         bres = -(self.result[spec]['b'] - avg) / self.bsteps
         rres = self.result[spec]['r'] - avg
 
@@ -831,6 +814,7 @@ class Hartmann(object):
 
             msglvl = self.cmd.warn
             self.success = False
+
         msglvl('%sResiduals=%d,%.1f,%s' % (spec, rres, bres, resid))
         self.cmd.inform('%sAverageMove=%d' % (spec, avg))
         self.moves[spec] = avg
@@ -852,7 +836,8 @@ class Hartmann(object):
     def _move_motors(self):
         """Apply computed collimator piston moves."""
         update_status(self.cmd, 'moving')
-        for spec, piston in self.moves.items():
+        for spec in myGlobals.specs:
+            piston = self.moves[spec]
             self._move_motor(spec, piston)
 
     def _move_motor(self, spec, piston):
