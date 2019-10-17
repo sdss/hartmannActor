@@ -774,7 +774,7 @@ class Hartmann(object):
         """Compute the mean movement and residuals for this spectrograph,
         after r&b moves have been determined."""
 
-        if np.all(np.isnan(self.result[spec])):
+        if np.all(np.isnan(self.result[spec].values())):
             self.cmd.warn('text="No camera information available for {}."'.format(spec))
             self.success = False
             return
