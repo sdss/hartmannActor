@@ -783,7 +783,7 @@ class Hartmann(object):
         bres = -(self.result[spec]['b'] - avg) / self.bsteps
         rres = self.result[spec]['r'] - avg
 
-        if np.isnan(bres):
+        if np.any(np.isnan(self.result[spec].values())):
             self.cmd.warn('text="bres is nan, skipping blue ring correction,"')
             bres = 0.
 
