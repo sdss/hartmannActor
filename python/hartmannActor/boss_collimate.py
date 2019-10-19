@@ -748,6 +748,7 @@ class Hartmann(object):
                 if len(spec_cameras[spec]) == 0:
                     self.cmd.warn('text="no cameras available for '
                                   '{}: skipping."'.format(spec))
+                    continue
                 self._mean_moves(spec, ignoreResiduals=ignoreResiduals,
                                  minBlueCorrection=minBlueCorrection)
             if plot:
