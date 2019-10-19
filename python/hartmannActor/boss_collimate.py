@@ -707,6 +707,9 @@ class Hartmann(object):
         cameras = cameras or myGlobals.cameras
         cameras = [camera for camera in cameras if int(camera[-1]) in spec_ids]
 
+        spec_cameras = {spec: [camera for camera in cameras if camera[-1] == spec[-1]]
+                        for spec in specs}
+
         self.cmd.inform('text="Processing cameras: {}"'.format(', '.join(cameras)))
 
         self.bypass = bypass or []
@@ -742,6 +745,9 @@ class Hartmann(object):
             return
         else:
             for spec in specs:
+                if len(spec_cameras[spec]) == 0:
+                    self.cmd.warn('text="no cameras available for '
+                                  '{}: skipping."'.format(spec))
                 self._mean_moves(spec, ignoreResiduals=ignoreResiduals,
                                  minBlueCorrection=minBlueCorrection)
             if plot:
