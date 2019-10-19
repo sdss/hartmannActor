@@ -4,6 +4,16 @@
 Change Log
 ==========
 
+.. _changelog-1.7.0:
+
+1.7.0 (unreleased)
+------------------
+
+Added
+^^^^^
+* Configuration option to define what cameras to use for adjusting focus. This can also be passed as comma-separated values to the keyword ``cameras`` (e.g., ``hartmann collimate cameras=b1,b1,b2``. If only one camera is available, only the collimator correction is calculated and applied (since we are optimising focus for a single camera it's not necessary to adjust both collimator and blue ring).
+
+
 .. _changelog-1.6.2:
 
 1.6.2 (2019-10-16)
