@@ -789,7 +789,8 @@ class Hartmann(object):
         rres = self.result[spec]['r'] - avg
 
         if np.any(np.isnan(self.result[spec].values())):
-            self.cmd.warn('text="{}: bres is nan, skipping blue ring correction,"'.format(spec))
+            self.cmd.warn('text="{}: bres cannot be calculated, '
+                          'skipping blue ring correction,"'.format(spec))
             bres = 0.
 
         # Calculates the minimum blue ring correction needed to get in the
