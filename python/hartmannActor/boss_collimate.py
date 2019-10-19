@@ -791,7 +791,7 @@ class Hartmann(object):
         if np.any(np.isnan(self.result[spec].values())):
             self.cmd.warn('text="{}: bres cannot be calculated, '
                           'skipping blue ring correction,"'.format(spec))
-            bres = rres = -999.
+            bres = rres = 0
 
         # Calculates the minimum blue ring correction needed to get in the
         # focus tolerance plus a buffer (see ticket #2701).
@@ -825,7 +825,7 @@ class Hartmann(object):
             msglvl = self.cmd.warn
             self.success = False
 
-        msglvl('%sResiduals=%.0f,%.1f,%s' % (spec, rres, bres, resid))
+        msglvl('%sResiduals=%d,%.1f,%s' % (spec, rres, bres, resid))
         self.cmd.inform('%sAverageMove=%d' % (spec, int(avg)))
         self.moves[spec] = avg
         self.residuals[spec] = [rres, bres, resid]
