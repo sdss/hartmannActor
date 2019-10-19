@@ -791,7 +791,7 @@ class Hartmann(object):
         if np.any(np.isnan(self.result[spec].values())):
             self.cmd.warn('text="{}: bres cannot be calculated, '
                           'skipping blue ring correction,"'.format(spec))
-            bres = 0.
+            bres = rres = -999.
 
         # Calculates the minimum blue ring correction needed to get in the
         # focus tolerance plus a buffer (see ticket #2701).
