@@ -6,7 +6,7 @@ Change Log
 
 .. _changelog-1.7.0:
 
-1.7.0 (unreleased)
+1.7.0 (2019-10-20)
 ------------------
 
 Added
