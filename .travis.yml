@@ -29,6 +29,7 @@ before_install:
 install:
   - poetry install
   - python tests/download_data.py
+  - cd tests
 
 script:
   - poetry run pytest
