@@ -19,12 +19,11 @@ notifications:
 
 # repo branches to test
 branches:
-  - master
-  - develop
-  - testing
+  - py3
 
 before_install:
   - pip install poetry
+  - python tests/download_data.py
 
 install:
   - poetry install

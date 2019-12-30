@@ -64,7 +64,7 @@ class TestHartmannCmd(HartmannCmdTester, unittest.TestCase):
 
     def test_status(self):
         self._run_cmd('status', None)
-        self._check_cmd(0, 2, 0, 0, True)
+        self._check_cmd(0, 4, 0, 0, True)
 
     def _recompute(self, args, expect, success=True):
         hart = FakeHartmann(success)

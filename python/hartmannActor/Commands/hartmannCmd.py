@@ -3,8 +3,6 @@
 Define available commands for hartmannActor.
 """
 
-import time
-
 import astropy.time
 import opscore.protocols.keys as keys
 import opscore.protocols.types as types
@@ -149,5 +147,6 @@ class hartmannCmd(object):
 
         if hartmann.success:
             cmd.finish()
+            print('finished')
         else:
             cmd.fail('text="collimation process failed"')
