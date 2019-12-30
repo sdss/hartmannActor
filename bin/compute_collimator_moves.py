@@ -6,7 +6,7 @@ Defaults to using etc/hartmann.cfg for the slope and intercept, unless -m or -b 
 """
 
 import argparse
-import ConfigParser
+import configparser
 import os
 import sys
 
@@ -22,7 +22,7 @@ def get_expnum(filename):
 def cams_params(values):
     """Return a converted, split 'b1,r1,b2,r2' string as a dictionary."""
     cams = ['b1', 'r1', 'b2', 'r2']
-    return dict(zip(cams, values))
+    return dict(list(zip(cams, values)))
 
 
 def main(argv=None):
@@ -89,7 +89,7 @@ def main(argv=None):
         mjd = None
 
     cmd = TestHelper.Cmd(verbose=True)
-    config = ConfigParser.ConfigParser()
+    config = configparser.ConfigParser()
     config.read(os.environ['HARTMANNACTOR_DIR'] + '/etc/hartmann.cfg')
     m, b, constants, coeff = hartmannActor_main.get_collimation_constants(config)
 

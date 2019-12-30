@@ -2,15 +2,15 @@
 Test the Hartmann collimation routine converted from idlspec2d combsmallcollimate.
 """
 
-import ConfigParser
+import configparser
 import glob
 import os
 import unittest
 
 import numpy as np
-import pyfits
 
 import hartmannTester
+import pyfits
 from hartmannActor import boss_collimate, hartmannActor_main
 
 
@@ -26,7 +26,7 @@ def get_mjd(filename):
 
 def get_config_constants():
     """Return various constants from the hartmannActor config file."""
-    config = ConfigParser.ConfigParser()
+    config = configparser.ConfigParser()
     config.read('../etc/hartmann.cfg')
     return hartmannActor_main.get_collimation_constants(config)
 
@@ -562,8 +562,8 @@ if __name__ == '__main__':
     verbosity = 2
 
     suite = None
-    #suite = unittest.TestLoader().loadTestsFromName('test_boss_collimate.TestOneCam.test_noCheckImage')
-    #suite = unittest.TestLoader().loadTestsFromName('test_boss_collimate.TestHartmann.test_make_plot_notFocused')
+    # suite = unittest.TestLoader().loadTestsFromName('test_boss_collimate.TestOneCam.test_noCheckImage')
+    # suite = unittest.TestLoader().loadTestsFromName('test_boss_collimate.TestHartmann.test_make_plot_notFocused')
     # suite = unittest.TestLoader().loadTestsFromName('test_boss_collimate.TestOneCam.test_check_image_noLight_b2')
     if suite:
         unittest.TextTestRunner(verbosity=verbosity).run(suite)

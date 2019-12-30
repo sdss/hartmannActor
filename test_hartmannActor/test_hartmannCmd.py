@@ -2,13 +2,14 @@
 Tests for the various hartmannCmds, using the full command structure.
 """
 
-import ConfigParser
 import time
 import unittest
+import configparser
 
-import hartmannActor.myGlobals as myGlobals
 import hartmannTester
 import RO.Astro.Tm.MJDFromPyTuple as astroMJD
+
+import hartmannActor.myGlobals as myGlobals
 from hartmannActor import boss_collimate, hartmannActor_main
 
 
@@ -45,7 +46,7 @@ class HartmannCmdTester(hartmannTester.HartmannTester):
         self.timeout = 1
 
         self.actor.models = self.actorState.models
-        config = ConfigParser.ConfigParser()
+        config = configparser.ConfigParser()
         config.read('../etc/hartmann.cfg')
         m, b, constants, coeff = hartmannActor_main.get_collimation_constants(config)
         self.hart = boss_collimate.Hartmann(self.actor, m, b, constants, coeff)

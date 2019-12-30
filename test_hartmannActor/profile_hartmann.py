@@ -1,7 +1,8 @@
 """
 profile boss_collimate to find bottlenecks.
 """
-import ConfigParser
+
+import configparser
 import cProfile
 import pstats
 import time
@@ -9,7 +10,8 @@ import time
 from actorcore import TestHelper
 from hartmannActor import boss_collimate, hartmannActor_main
 
-config = ConfigParser.ConfigParser()
+
+config = configparser.ConfigParser()
 config.read('../etc/hartmann.cfg')
 m, b, constants, coeff = hartmannActor_main.get_collimation_constants(config)
 
@@ -30,8 +32,8 @@ hart.cmd = cmd
 # p.strip_dirs()
 # p.sort_stats('time').print_stats(10)
 
-print 'Profiling single oneCam __call__()'
-print '----------------------------------'
+print('Profiling single oneCam __call__()')
+print('----------------------------------')
 # Now profile a single OneCam call, to see what happens in the guts of it.
 prof = cProfile.Profile()
 oneCam = boss_collimate.OneCam(m, b, constants['bsteps'], constants['focustol'], coeff, 183069,
@@ -45,4 +47,4 @@ p.sort_stats('time').print_stats(10)
 t1 = time.time()
 hart.collimate(183069, mjd=56896, cmd=cmd)
 t2 = time.time()
-print 'time:', t2 - t1
+print('time:', t2 - t1)

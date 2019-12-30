@@ -1,10 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-#
-# @Author: José Sánchez-Gallego (gallegoj@uw.edu)
-# @Filename: boss_collimate.py
-# @License: BSD 3-clause (http://www.opensource.org/licenses/BSD-3-Clause)
-
 """
 Computes spectrograph collimation focus from Hartmann mask exposures.
 
@@ -41,24 +34,22 @@ the Hartmann-r exposure by in Y to agree with the Hartmann-l exposure.
 # IDL version by Kyle Dawson, David Schlegel, Matt Olmstead
 # IDL->Python verson by John Parejko
 
-
-from __future__ import absolute_import, division, print_function
-
 import os.path
 import time
 from multiprocessing import Pool
 
 import numpy as np
+from astropy.time import Time
 from scipy.ndimage import interpolation
 
 import hartmannActor.myGlobals as myGlobals
 from opscore.utility.qstr import qstr
-from sdss.utilities import astrodatetime
-
 
 import matplotlib  # isort:skip
 matplotlib.use('Agg')  # isort:skip
+
 import matplotlib.pyplot as plt  # noqa isort:skip
+
 
 try:
     fitsio = True
@@ -270,11 +261,12 @@ class OneCam(object):
                 ffs_sum = sum_string(ffs)
                 if ffs_sum < 8:
                     self.add_msg(
-                        'w', 'text="%s: Only %d of 8 flat-field petals closed: %s"' % (self.cam,
-                                                                                    ffs_sum, ffs))
+                        'w',
+                        'text="%s: Only %d of 8 flat-field petals closed: %s"' % (self.cam,
+                                                                                  ffs_sum, ffs))
                 if ffs_sum == 0:
                     isBad = True
-            except:
+            except BaseException:
                 self.add_msg('w', 'text="{}: failed reading FFS info"'.format(self.cam))
                 isBad = True
         else:
@@ -778,7 +770,15 @@ class Hartmann(object):
             # NOTE: exposureId is a lagging indicator.
             exposureId += 1
             exposureIds.append(exposureId)
-            self.mjd = int(astrodatetime.datetime.utcnow().sdssjd)
+
+            mjd = Time.now().mjd
+            if self.actor.location == 'APO':
+                self.mjd = int(mjd + 0.3)
+            elif self.actor.location == 'LCO':
+                self.mjd = int(mjd + 0.5)
+            else:
+                self.mjd = int(mjd)
+
             self.cmd.inform('text="got hartmann %s exposure %d"' % (side, exposureId))
         return exposureIds
 
@@ -786,16 +786,16 @@ class Hartmann(object):
         """Compute the mean movement and residuals for this spectrograph,
         after r&b moves have been determined."""
 
-        if np.all(np.isnan(self.result[spec].values())):
+        if np.all(np.isnan(list(self.result[spec].values()))):
             self.cmd.warn('text="No camera information available for {}."'.format(spec))
             self.success = False
             return
 
-        avg = np.nanmean(self.result[spec].values())
+        avg = np.nanmean(list(self.result[spec].values()))
         bres = -(self.result[spec]['b'] - avg) / self.bsteps
         rres = self.result[spec]['r'] - avg
 
-        if np.any(np.isnan(self.result[spec].values())):
+        if np.any(np.isnan(list(self.result[spec].values()))):
             self.cmd.warn('text="{}: bres cannot be calculated, '
                           'skipping blue ring correction,"'.format(spec))
             bres = rres = 0

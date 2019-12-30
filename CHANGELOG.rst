@@ -4,6 +4,16 @@
 Change Log
 ==========
 
+.. _changelog-2.0.0:
+
+2.0.0 (unreleased)
+------------------
+
+Support
+^^^^^^^
+* Modify to work with ``actorcore 5.0``, which includes modifications to be Python 3-only, change the location of the the configuration file, and proper packaging.
+
+
 .. _changelog-1.7.0:
 
 1.7.0 (2019-10-20)

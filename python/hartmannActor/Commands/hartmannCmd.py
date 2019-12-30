@@ -56,6 +56,7 @@ class hartmannCmd(object):
 
     def ping(self, cmd):
         """Query the actor for liveness/happiness."""
+
         cmd.inform('status=%s' % myGlobals.hartmannStatus)
         cmd.finish("text='Pong'")
 
