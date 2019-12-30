@@ -5,10 +5,11 @@ Define available commands for hartmannActor.
 
 import time
 
-import hartmannActor.myGlobals as myGlobals
+import astropy.time
 import opscore.protocols.keys as keys
 import opscore.protocols.types as types
-import RO.Astro.Tm.MJDFromPyTuple as astroMJD
+
+import hartmannActor.myGlobals as myGlobals
 from hartmannActor import boss_collimate
 
 
@@ -84,7 +85,7 @@ class hartmannCmd(object):
             mjd = int(keywords['mjd'].values[0])
         else:
             # SDSS MJD is truncated (MJD_TAI + 0.3)
-            mjd = int(astroMJD.mjdFromPyTuple(time.gmtime()) + 0.3)
+            mjd = int(astropy.time.Time.now().mjd + 0.3)
 
         moveMotors = 'noCorrect' not in keywords
         noCheckImage = 'noCheckImage' in keywords

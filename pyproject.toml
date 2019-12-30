@@ -28,7 +28,7 @@ numpy = ">=1.17.0"
 fitsio = "^1.0.5"
 scipy = "^1.4.1"
 astropy = "^4.0"
-# sdss-actorcore = "^5.0.0"
+sdss-actorcore = { git = "https://github.com/sdss/actorcore", branch = "py3" }
 
 matplotlib = "^3.1.2"
 [tool.poetry.dev-dependencies]
@@ -46,7 +46,7 @@ ipdb = "^0.12.3"
 toml = "^0.10.0"
 
 [tool.poetry.scripts]
-hartmannActor = 'hartmannActor.hartmannActor:__main__'
+hartmannActor = 'hartmannActor.hartmann:run_actor'
 
 [tool.isort]
 line_length = 79

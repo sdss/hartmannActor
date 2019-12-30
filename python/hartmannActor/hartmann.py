@@ -109,7 +109,7 @@ class HartmannActorLocal(HartmannActor):
     location = 'LOCAL'
 
 
-if __name__ == '__main__':
+def run_actor():
 
     if len(sys.argv) > 1:
         location = sys.argv[1]
@@ -118,3 +118,8 @@ if __name__ == '__main__':
 
     hartmann = HartmannActor.newActor(location=location)
     hartmann.run()
+
+
+if __name__ == '__main__':
+
+    run_actor()
