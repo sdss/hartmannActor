@@ -2,15 +2,16 @@
 Tests for the various hartmannCmds, using the full command structure.
 """
 
-import time
-import unittest
-import configparser
 
-import hartmannTester
-import RO.Astro.Tm.MJDFromPyTuple as astroMJD
+import unittest
+
+import astropy.time
 
 import hartmannActor.myGlobals as myGlobals
-from hartmannActor import boss_collimate, hartmannActor_main
+from hartmannActor import boss_collimate, hartmann
+
+from . import hartmannTester
+from .test_boss_collimate import config
 
 
 class FakeHartmann():
@@ -46,11 +47,13 @@ class HartmannCmdTester(hartmannTester.HartmannTester):
         self.timeout = 1
 
         self.actor.models = self.actorState.models
-        config = configparser.ConfigParser()
-        config.read('../etc/hartmann.cfg')
-        m, b, constants, coeff = hartmannActor_main.get_collimation_constants(config)
+
+        m, b, constants, coeff = hartmann.get_collimation_constants(config)
         self.hart = boss_collimate.Hartmann(self.actor, m, b, constants, coeff)
         self.hart.cmd = self.cmd
+
+        myGlobals.specs = config['spec']['specs'].split(' ')
+        myGlobals.cameras = config['spec']['cameras'].split(' ')
 
 
 class TestHartmannCmd(HartmannCmdTester, unittest.TestCase):
@@ -79,7 +82,7 @@ class TestHartmannCmd(HartmannCmdTester, unittest.TestCase):
         self._recompute('id={expnum1} mjd={mjd}'.format(**expect), expect, success=True)
 
     def test_recompute_no_move(self):
-        currentMJD = int(astroMJD.mjdFromPyTuple(time.gmtime()) + 0.3)
+        currentMJD = int(astropy.time.Time.now().mjd + 0.3)
         expect = {'expnum1': 3, 'mjd': currentMJD, 'moveMotors': False}
         self._recompute('id={expnum1} noCorrect'.format(**expect), expect, success=True)
 
@@ -141,9 +144,3 @@ class TestHartmannCmd(HartmannCmdTester, unittest.TestCase):
     def test_collimate_bypass_multiple(self):
         expect = {'bypass': ['ffs', 'hola']}
         self._collimate('bypass="ffs,hola"', expect, success=True)
-
-
-if __name__ == '__main__':
-    verbosity = 2
-
-    unittest.main(verbosity=verbosity)

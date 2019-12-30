@@ -2,16 +2,54 @@
 Test the Hartmann collimation routine converted from idlspec2d combsmallcollimate.
 """
 
-import configparser
 import glob
 import os
 import unittest
 
+import astropy.io.fits
 import numpy as np
 
-import hartmannTester
-import pyfits
-from hartmannActor import boss_collimate, hartmannActor_main
+import hartmannActor.myGlobals as myGlobals
+from hartmannActor import boss_collimate, hartmann
+
+from . import hartmannTester
+
+
+config = {
+
+    'spec': {
+        'specs': 'sp1 sp2',
+        'cameras': 'r1 b1 r2 b2'
+    },
+
+    'm': {
+        'b1': 1,
+        'r1': 1,
+        'b2': 1,
+        'r2': 1
+    },
+
+    'b': {
+        'b1': -0.44,
+        'r1': -0.20,
+        'b2': -0.10,
+        'r2': 0.20
+    },
+
+    'constants': {
+        'bsteps': 319.0,
+        'badres': 4.0,
+        'focustol': 0.20
+    },
+
+    'coeff': {
+        'r1': 439.8,
+        'b1': 428.5,
+        'r2': 420.8,
+        'b2': 420.3
+    }
+
+}
 
 
 def get_expnum(filename):
@@ -26,9 +64,7 @@ def get_mjd(filename):
 
 def get_config_constants():
     """Return various constants from the hartmannActor config file."""
-    config = configparser.ConfigParser()
-    config.read('../etc/hartmann.cfg')
-    return hartmannActor_main.get_collimation_constants(config)
+    return hartmann.get_collimation_constants(config)
 
 
 # ########################################
@@ -194,8 +230,11 @@ class TestOneCam(hartmannTester.HartmannTester, unittest.TestCase):
         self.oneCam.cam = self.cam
         self.oneCam.bypass = []
 
+        myGlobals.specs = ['sp2']
+        myGlobals.cameras = ['r2']
+
     def _check_Hartmann_header(self, filename, expect, indir=data_dir):
-        header = pyfits.getheader(os.path.join(indir, filename))
+        header = astropy.io.fits.getheader(os.path.join(indir, filename))
         result = self.oneCam.check_Hartmann_header(header)
         self.assertEqual(result, expect)
 
@@ -215,38 +254,38 @@ class TestOneCam(hartmannTester.HartmannTester, unittest.TestCase):
         self._check_cmd(0, 0, 0, 0, False)
 
     def test_bad_header_ok(self):
-        header = pyfits.getheader(os.path.join(focused_dir, focused1))
+        header = astropy.io.fits.getheader(os.path.join(focused_dir, focused1))
         self._bad_header(header, False, 0)
 
     def test_bad_header_noNe(self):
-        header = pyfits.getheader(data_dir + NeOff1)
+        header = astropy.io.fits.getheader(data_dir + NeOff1)
         self._bad_header(header, True, 1)
 
     def test_bad_header_noHgcd(self):
-        header = pyfits.getheader(data_dir + HgCdOff1)
+        header = astropy.io.fits.getheader(data_dir + HgCdOff1)
         self._bad_header(header, True, 1)
 
     def test_bad_header_noLamps(self):
-        header = pyfits.getheader(data_dir + bothOff1)
+        header = astropy.io.fits.getheader(data_dir + bothOff1)
         self._bad_header(header, True, 2)
 
     @unittest.skip('need file for this test!')
     def test_bad_header_noFFS(self):
-        header = pyfits.getheader(data_dir + noFFS)
+        header = astropy.io.fits.getheader(data_dir + noFFS)
         self._bad_header(header, True, 1)
 
     @unittest.skip('need file for this test!')
     def test_bad_header_not_Hartmann(self):
-        header = pyfits.getheader(data_dir + notHartmann)
+        header = astropy.io.fits.getheader(data_dir + notHartmann)
         self._bad_header(header, True, 1)
 
     def test_bad_header_ffs(self):
-        header = pyfits.getheader(badFFS_1)
+        header = astropy.io.fits.getheader(badFFS_1)
         with self.assertRaises(ValueError):
             self._bad_header(header, True, 1)
 
     def test_bad_header_ffs_bypassed(self):
-        header = pyfits.getheader(badFFS_1)
+        header = astropy.io.fits.getheader(badFFS_1)
         self.oneCam.bypass = ['ffs']
         self._bad_header(header, False, 2)
 
@@ -556,16 +595,3 @@ class TestHartmann(hartmannTester.HartmannCallsTester, unittest.TestCase):
         self.hart(self.cmd, plot=True)
         self.assertFalse(self.hart.success)
         self._check_cmd(1, 2, 0, 1, False)
-
-
-if __name__ == '__main__':
-    verbosity = 2
-
-    suite = None
-    # suite = unittest.TestLoader().loadTestsFromName('test_boss_collimate.TestOneCam.test_noCheckImage')
-    # suite = unittest.TestLoader().loadTestsFromName('test_boss_collimate.TestHartmann.test_make_plot_notFocused')
-    # suite = unittest.TestLoader().loadTestsFromName('test_boss_collimate.TestOneCam.test_check_image_noLight_b2')
-    if suite:
-        unittest.TextTestRunner(verbosity=verbosity).run(suite)
-    else:
-        unittest.main(verbosity=verbosity)
