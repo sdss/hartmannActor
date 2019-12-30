@@ -22,7 +22,7 @@ def clean(ctx):
     """Cleans up the crap before a Pip build"""
 
     print('Cleaning')
-    ctx.run('rm -rf htmlcov **/htmlcov .coverage **/.coverage')
+    ctx.run('rm -rf htmlcov **/htmlcov .coverage* **/.coverage*')
     ctx.run('rm -rf build')
     ctx.run('rm -rf dist')
     ctx.run('rm -rf **/*.egg-info *.egg-info')
