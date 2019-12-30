@@ -23,10 +23,10 @@ branches:
 
 before_install:
   - pip install poetry
-  - python tests/download_data.py
 
 install:
   - poetry install
+  - python tests/download_data.py
 
 script:
   - poetry run pytest
