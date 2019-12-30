@@ -13,7 +13,7 @@ import sys
 import urllib.request
 
 
-sys.path.append('../')  # To allow absolute import
+sys.path.append(os.path.dirname(__file__) + '/../')  # To allow absolute import
 
 from tests.test_boss_collimate import *
 
