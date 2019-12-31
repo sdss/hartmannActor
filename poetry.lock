@@ -658,7 +658,7 @@ sdss-opscore = "*"
 twisted = ">=19.10.0"
 
 [package.source]
-reference = "81b10e7cd38bdc63ffc07c7c4f48ea5186359bdc"
+reference = "e0ae0b83efb21cc8ddb29ddbd63721f7dddc4b81"
 type = "git"
 url = "https://github.com/sdss/actorcore"
 [[package]]
