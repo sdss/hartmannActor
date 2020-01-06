@@ -6,25 +6,21 @@
 # @Filename: __init__.py
 # @License: BSD 3-clause (http://www.opensource.org/licenses/BSD-3-Clause)
 
-import pathlib
-
 import pkg_resources
 
 
-def get_version():
+def get_version(NAME):
 
     try:
-        return pkg_resources.get_distribution('sdss-hartmannActor').version
+        return pkg_resources.get_distribution(NAME).version
     except pkg_resources.DistributionNotFound:
         try:
-            import toml
-            poetry_config = toml.load(
-                open(pathlib.Path(__file__).parent / '../../pyproject.toml'))
-            return poetry_config['tool']['poetry']['version']
-        except Exception:
+            from sdsstools import get_package_version
+            return get_package_version(__file__, NAME) or '0.0.0'
+        except (ImportError, ModuleNotFoundError):
             return '0.0.0'
 
 
-__version__ = get_version()
-
 NAME = 'sdss-hartmannActor'
+
+__version__ = get_version(NAME)
