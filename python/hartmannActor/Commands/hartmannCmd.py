@@ -140,6 +140,8 @@ class hartmannCmd(object):
 
         hartmann.reinit()
 
+        cmd.debug('text="declaring multiprocess"')
+
         self.hartmann_process = multiprocessing.Process(
             target=hartmann.__call__,
             args=(cmd,),
@@ -152,7 +154,9 @@ class hartmannCmd(object):
                         cameras=cameras))
 
         self.hartmann_process.start()
+        cmd.debug('text="starting multiprocess"')
         self.hartmann_process.join()
+        cmd.debug('text="joining multiprocess"')
 
         if hartmann.success:
             cmd.finish()
