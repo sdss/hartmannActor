@@ -52,6 +52,7 @@ class hartmannCmd(object):
                           '[minBlueCorrection] [<bypass>] [<cameras>]', self.collimate),
             ('recompute', '<id> [<id2>] [<mjd>] [noCorrect] '
                           '[noCheckImage] [<bypass>] [<cameras>]', self.recompute),
+            ('abort', '', self.abort)
         ]
 
     def ping(self, cmd):
@@ -145,7 +146,14 @@ class hartmannCmd(object):
                  bypass=bypass,
                  cameras=cameras)
 
-        if hartmann.success:
+        if hartmann.success and not hartmann.aborting:
             cmd.finish()
         else:
             cmd.fail('text="collimation process failed"')
+
+    def abort(self, cmd):
+        """Aborts the collimation."""
+
+        cmd.warn('text="aborting the collimation ... "')
+        myGlobals.hartmann.aborting = True
+        cmd.finish()
