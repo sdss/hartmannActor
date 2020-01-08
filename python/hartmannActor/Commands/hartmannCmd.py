@@ -55,7 +55,7 @@ class hartmannCmd(object):
                           '[minBlueCorrection] [<bypass>] [<cameras>]', self.collimate),
             ('recompute', '<id> [<id2>] [<mjd>] [noCorrect] '
                           '[noCheckImage] [<bypass>] [<cameras>]', self.recompute),
-            ('abort', self.abort)
+            ('abort', '', self.abort)
         ]
 
     def ping(self, cmd):
