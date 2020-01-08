@@ -1,8 +1,10 @@
 #!/usr/bin/env python
+
 """
 Define available commands for hartmannActor.
 """
 
+import multiprocessing
 import time
 
 import hartmannActor.myGlobals as myGlobals
@@ -18,6 +20,7 @@ class hartmannCmd(object):
     def __init__(self, actor):
 
         self.actor = actor
+        self.hartmann_process = None
 
         # Declare commands
         self.keys = keys.KeysDictionary(
@@ -52,6 +55,7 @@ class hartmannCmd(object):
                           '[minBlueCorrection] [<bypass>] [<cameras>]', self.collimate),
             ('recompute', '<id> [<id2>] [<mjd>] [noCorrect] '
                           '[noCheckImage] [<bypass>] [<cameras>]', self.recompute),
+            ('abort', self.abort)
         ]
 
     def ping(self, cmd):
@@ -136,16 +140,36 @@ class hartmannCmd(object):
 
         hartmann.reinit()
 
-        hartmann(cmd,
-                 moveMotors=moveMotors,
-                 subFrame=subFrame,
-                 ignoreResiduals=ignoreResiduals,
-                 noCheckImage=noCheckImage,
-                 minBlueCorrection=minBlueCorrection,
-                 bypass=bypass,
-                 cameras=cameras)
+        self.hartmann_process = multiprocessing.Process(
+            target=hartmann,
+            args=(cmd,),
+            kwargs=dict(moveMotors=moveMotors,
+                        subFrame=subFrame,
+                        ignoreResiduals=ignoreResiduals,
+                        noCheckImage=noCheckImage,
+                        minBlueCorrection=minBlueCorrection,
+                        bypass=bypass,
+                        cameras=cameras))
+
+        self.hartmann_process.start()
+        self.hartmann_process.join()
 
         if hartmann.success:
             cmd.finish()
         else:
             cmd.fail('text="collimation process failed"')
+
+        self.hartmann_process = None
+
+    def abort(self, cmd):
+        """Aborts the execution of a collimation."""
+
+        if self.hartmann_process:
+
+            cmd.warn('text="aborting collimate command"')
+            self.hartmann_process.terminate()
+            cmd.finish()
+
+        else:
+
+            cmd.fail('text="collimate is not running"')
