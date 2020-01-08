@@ -141,7 +141,7 @@ class hartmannCmd(object):
         hartmann.reinit()
 
         self.hartmann_process = multiprocessing.Process(
-            target=hartmann,
+            target=hartmann.__call__,
             args=(cmd,),
             kwargs=dict(moveMotors=moveMotors,
                         subFrame=subFrame,
