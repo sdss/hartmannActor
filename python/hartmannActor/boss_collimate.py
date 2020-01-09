@@ -529,6 +529,7 @@ class Hartmann(object):
 
     def reinit(self):
         self.success = True
+        self.aborting = False
         # final results go here
         self.result = {'sp1': {'b': np.nan, 'r': np.nan}, 'sp2': {'b': np.nan, 'r': np.nan}}
         self.full_result = {'sp1': {'b': None, 'r': None}, 'sp2': {'b': None, 'r': None}}
@@ -603,7 +604,11 @@ class Hartmann(object):
 
         except HartError as e:
 
-            self.cmd.error('text="%s"' % e)
+            if self.aborting:
+                self.cmd.error('text="aborting hartmanns! {}"'.format(e))
+            else:
+                self.cmd.error('text="%s"' % e)
+
             self.success = False
 
         except Exception as e:
@@ -613,6 +618,11 @@ class Hartmann(object):
             self.success = False
 
         update_status(self.cmd, 'idle')
+
+        if self.success and not self.aborting:
+            cmd.finish()
+        else:
+            cmd.fail('text="collimation process failed"')
 
     def _bundle_result(self, cams, results):
         """Return dict of spec:{cam:piston}."""
@@ -646,6 +656,9 @@ class Hartmann(object):
 
     def _collimate(self, expnum1, expnum2, indir, docams, noCheckImage):
         """The guts of the collimation, to be wrapped in a try:except block."""
+
+        if self.aborting:
+            raise HartError('Manual abort.')
 
         # pool = ThreadPool(len(docams)) # NOTE: for testing with threads instead of processes
         pool = Pool(len(docams))
@@ -700,6 +713,10 @@ class Hartmann(object):
             Bypasses to apply.
 
         """
+
+        if self.aborting:
+            self.success = False
+            raise HartError
 
         specs = myGlobals.specs
         spec_ids = [int(spec[-1]) for spec in specs]
@@ -765,6 +782,10 @@ class Hartmann(object):
         exposureIds = []
         timeLim = 120.0
         for side in 'left', 'right':
+
+            if self.aborting:
+                raise HartError
+
             window = 'window={0},{1}'.format(*self.subFrame) if subFrame else ''
             cmdStr = 'exposure arc hartmann=%s itime=4 %s %s' % (side, window,
                                                                  ('noflush'
@@ -786,7 +807,10 @@ class Hartmann(object):
         """Compute the mean movement and residuals for this spectrograph,
         after r&b moves have been determined."""
 
-        if np.all(np.isnan(self.result[spec].values())):
+        if self.aborting:
+            raise HartError
+
+        if np.all(np.isnan(list(self.result[spec].values()))):
             self.cmd.warn('text="No camera information available for {}."'.format(spec))
             self.success = False
             return
@@ -840,6 +864,10 @@ class Hartmann(object):
 
     def move_motors(self):
         """Apply computed collimator piston moves, in an exception-safe manner."""
+
+        if self.aborting:
+            raise HartError
+
         try:
             self._move_motors()
         except HartError as e:

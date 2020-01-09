@@ -3,6 +3,8 @@
 Define available commands for hartmannActor.
 """
 
+import ctypes
+import threading
 import time
 
 import hartmannActor.myGlobals as myGlobals
@@ -12,12 +14,39 @@ import RO.Astro.Tm.MJDFromPyTuple as astroMJD
 from hartmannActor import boss_collimate
 
 
+def async_raise(thread_obj, exception):
+    """Raises an exception inside a thread."""
+
+    found = False
+    target_tid = 0
+
+    for tid, tobj in threading._active.items():
+        if tobj is thread_obj:
+            found = True
+            target_tid = tid
+            break
+
+    if not found:
+        raise ValueError('Invalid thread object')
+
+    ret = ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_ulong(target_tid),
+                                                     ctypes.py_object(exception))
+    # ref: http://docs.python.org/c-api/init.html#PyThreadState_SetAsyncExc
+
+    if ret == 0:
+        raise ValueError('Invalid thread ID')
+    elif ret > 1:
+        ctypes.pythonapi.PyThreadState_SetAsyncExc(target_tid, 0)
+        raise SystemError('PyThreadState_SetAsyncExc failed')
+
+
 class hartmannCmd(object):
     """Wrap commands to the hartmann actor"""
 
     def __init__(self, actor):
 
         self.actor = actor
+        self.hartmann_thread = None
 
         # Declare commands
         self.keys = keys.KeysDictionary(
@@ -52,6 +81,7 @@ class hartmannCmd(object):
                           '[minBlueCorrection] [<bypass>] [<cameras>]', self.collimate),
             ('recompute', '<id> [<id2>] [<mjd>] [noCorrect] '
                           '[noCheckImage] [<bypass>] [<cameras>]', self.recompute),
+            ('abort', '', self.abort)
         ]
 
     def ping(self, cmd):
@@ -136,16 +166,45 @@ class hartmannCmd(object):
 
         hartmann.reinit()
 
-        hartmann(cmd,
-                 moveMotors=moveMotors,
-                 subFrame=subFrame,
-                 ignoreResiduals=ignoreResiduals,
-                 noCheckImage=noCheckImage,
-                 minBlueCorrection=minBlueCorrection,
-                 bypass=bypass,
-                 cameras=cameras)
+        # This is a long running process so we run it in a thread.
+        myGlobals.hartmann_thread = threading.Thread(
+            target=hartmann,
+            args=(cmd,),
+            kwargs=dict(moveMotors=moveMotors,
+                        subFrame=subFrame,
+                        ignoreResiduals=ignoreResiduals,
+                        noCheckImage=noCheckImage,
+                        minBlueCorrection=minBlueCorrection,
+                        bypass=bypass,
+                        cameras=cameras))
+        myGlobals.hartmann_thread.start()
 
-        if hartmann.success:
-            cmd.finish()
-        else:
-            cmd.fail('text="collimation process failed"')
+    def abort(self, cmd):
+        """Aborts the collimation."""
+
+        thread = myGlobals.hartmann_thread
+
+        cmd.warn('text="aborting the collimation ... "')
+        myGlobals.hartmann.aborting = True
+
+        cancellable_states = ('FLUSHING', 'INTEGRATING', 'PAUSED')
+        boss_state = myGlobals.models['boss'].keyVarDict['exposureState'][0]
+
+        if boss_state in cancellable_states:
+            cmd.warn('text="stopping one BOSS exposure."')
+            myGlobals.actor.cmdr.call(actor='boss', forUserCmd=cmd, cmdStr='exposure stop')
+
+        # If the hartmann is still cancelling, we give it five seconds before raising an
+        # exception inside the thread.
+        if thread.is_alive():
+            thread.join(timeout=5)
+
+        if thread.is_alive():
+            cmd.warn('text="aggressively stopping the thread."')
+            async_raise(thread, SystemExit)
+
+        thread.join(timeout=10)
+        if thread.is_alive():
+            cmd.failed('text="failed to abort thread."')
+
+        cmd.finish('text="collimation aborted. Check the status of the lamps."')
