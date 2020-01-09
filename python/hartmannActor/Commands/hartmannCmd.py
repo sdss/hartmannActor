@@ -209,7 +209,7 @@ class hartmannCmd(object):
         #     cmd.warn('text="aggressively stopping the thread."')
         #     async_raise(thread, SystemExit)
 
-        thread.join(timeout=30)
+        thread.join(timeout=60)
         if thread.is_alive():
             cmd.fail('text="failed to abort thread."')
             return
