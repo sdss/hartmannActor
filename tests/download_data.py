@@ -12,8 +12,9 @@ import os
 import sys
 import urllib.request
 
+test_dir = os.path.dirname(__file__)
 
-sys.path.append(os.path.dirname(__file__) + '/../')  # To allow absolute import
+sys.path.append(os.path.join(test_dir, '../'))  # To allow absolute import
 
 from tests.test_boss_collimate import *
 
@@ -31,7 +32,7 @@ files = {
 
 def download_data():
 
-    os.chdir(os.path.dirname(__file__))
+    os.chdir(test_dir)
 
     for dir_ in files:
 
