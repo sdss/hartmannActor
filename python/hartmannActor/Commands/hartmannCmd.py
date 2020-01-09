@@ -184,6 +184,10 @@ class hartmannCmd(object):
 
         thread = myGlobals.hartmann_thread
 
+        if not thread or not thread.is_alive():
+            cmd.finish('text="collimate is not running"')
+            return
+
         cmd.warn('text="aborting the collimation ... "')
         myGlobals.hartmann.aborting = True
 
