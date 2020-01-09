@@ -3,7 +3,6 @@
 Define available commands for hartmannActor.
 """
 
-import ctypes
 import threading
 
 import astropy.time
@@ -12,32 +11,6 @@ import opscore.protocols.types as types
 
 import hartmannActor.myGlobals as myGlobals
 from hartmannActor import boss_collimate
-
-
-def async_raise(thread_obj, exception):
-    """Raises an exception inside a thread."""
-
-    found = False
-    target_tid = 0
-
-    for tid, tobj in threading._active.items():
-        if tobj is thread_obj:
-            found = True
-            target_tid = tid
-            break
-
-    if not found:
-        raise ValueError('Invalid thread object')
-
-    ret = ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_ulong(target_tid),
-                                                     ctypes.py_object(exception))
-    # ref: http://docs.python.org/c-api/init.html#PyThreadState_SetAsyncExc
-
-    if ret == 0:
-        raise ValueError('Invalid thread ID')
-    elif ret > 1:
-        ctypes.pythonapi.PyThreadState_SetAsyncExc(target_tid, 0)
-        raise SystemError('PyThreadState_SetAsyncExc failed')
 
 
 class hartmannCmd(object):
@@ -185,6 +158,10 @@ class hartmannCmd(object):
 
         thread = myGlobals.hartmann_thread
 
+        if not thread or not thread.is_alive():
+            cmd.finish('text="collimate is not running"')
+            return
+
         cmd.warn('text="aborting the collimation ... "')
         myGlobals.hartmann.aborting = True
 
@@ -195,17 +172,9 @@ class hartmannCmd(object):
             cmd.warn('text="stopping one BOSS exposure."')
             myGlobals.actor.cmdr.call(actor='boss', forUserCmd=cmd, cmdStr='exposure stop')
 
-        # If the hartmann is still cancelling, we give it five seconds before raising an
-        # exception inside the thread.
+        thread.join(timeout=60)
         if thread.is_alive():
-            thread.join(timeout=5)
+            cmd.fail('text="failed to abort thread."')
+            return
 
-        if thread.is_alive():
-            cmd.warn('text="aggressively stopping the thread."')
-            async_raise(thread, SystemExit)
-
-        thread.join(timeout=10)
-        if thread.is_alive():
-            cmd.failed('text="failed to abort thread."')
-
-        cmd.finish('text="collimation aborted. Check the status of the lamps."')
+        cmd.finish('text="collimation aborted. Remember to check the status of the lamps."')
