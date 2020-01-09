@@ -196,7 +196,8 @@ class hartmannCmd(object):
 
         if boss_state in cancellable_states:
             cmd.warn('text="stopping one BOSS exposure."')
-            myGlobals.actor.cmdr.call(actor='boss', forUserCmd=cmd, cmdStr='exposure stop')
+            myGlobals.actor.cmdr.call(actor='boss', forUserCmd=cmd, cmdStr='exposure abort')
+            myGlobals.actor.cmdr.call(actor='boss', forUserCmd=cmd, cmdStr='exposure clear')
 
         # If the hartmann is still cancelling, we give it five seconds before raising an
         # exception inside the thread.
@@ -209,6 +210,6 @@ class hartmannCmd(object):
 
         thread.join(timeout=10)
         if thread.is_alive():
-            cmd.failed('text="failed to abort thread."')
+            cmd.fail('text="failed to abort thread."')
 
         cmd.finish('text="collimation aborted. Check the status of the lamps."')
