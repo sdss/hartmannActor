@@ -20,13 +20,18 @@ class FakeHartmann():
     def __init__(self, success):
         self.success = success
         self.moved = False
+        self.aborting = False
 
     def reinit(self):
-        pass
+        self.aborting = False
 
     def __call__(self, cmd, **kwargs):
         self.cmd = cmd
         self.kwargs = kwargs
+        if self.success:
+            self.cmd.finish()
+        else:
+            self.cmd.fail("text='command failed'")
         return self.success
 
     def collimate(self, expnum1, **kwargs):
@@ -105,6 +110,8 @@ class TestHartmannCmd(HartmannCmdTester, unittest.TestCase):
         hart = FakeHartmann(success)
         myGlobals.hartmann = hart
         self._run_cmd('collimate %s' % args, None)
+        if myGlobals.hartmann_thread:
+            myGlobals.hartmann_thread.join()
         self._check_cmd(0, 0, 0, 0, True, not success)
         self.assertEqual(hart.kwargs['moveMotors'], expect.get('moveMotors', True))
         self.assertEqual(hart.kwargs['subFrame'], expect.get('subFrame', True))
