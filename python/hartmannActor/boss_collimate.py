@@ -787,18 +787,13 @@ class Hartmann(object):
                 raise HartError
 
             window = 'window={0},{1}'.format(*self.subFrame) if subFrame else ''
-            cmdStr = 'exposure arc hartmann=%s noreadout itime=4 %s %s' % (
-                side, window, ('noflush' if side == 'right' else ''))
+            cmdStr = 'exposure arc hartmann=%s itime=4 %s %s' % (side, window,
+                                                                 ('noflush'
+                                                                  if side == 'right' else ''))
             ret = self.actor.cmdr.call(
                 actor='boss', forUserCmd=self.cmd, cmdStr=cmdStr, timeLim=timeLim)
             if ret.didFail:
                 raise HartError('Failed to take %s hartmann exposure"' % (side))
-
-            ret = self.actor.cmdr.call(
-                actor='boss', forUserCmd=self.cmd, cmdStr='exposure readout', timeLim=timeLim)
-            if ret.didFail:
-                raise HartError('Failed to read %s hartmann exposure"' % (side))
-
             # opscore fake-Ints don't cleanly pickle for multiprocessing.
             exposureId = int(self.models['boss'].keyVarDict['exposureId'][0])
             # NOTE: exposureId is a lagging indicator.
