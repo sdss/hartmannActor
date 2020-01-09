@@ -202,14 +202,14 @@ class hartmannCmd(object):
 
         # If the hartmann is still cancelling, we give it five seconds before raising an
         # exception inside the thread.
-        if thread.is_alive():
-            thread.join(timeout=5)
+        # if thread.is_alive():
+        #     thread.join(timeout=5)
 
-        if thread.is_alive():
-            cmd.warn('text="aggressively stopping the thread."')
-            async_raise(thread, SystemExit)
+        # if thread.is_alive():
+        #     cmd.warn('text="aggressively stopping the thread."')
+        #     async_raise(thread, SystemExit)
 
-        thread.join(timeout=10)
+        thread.join(timeout=30)
         if thread.is_alive():
             cmd.fail('text="failed to abort thread."')
             return
