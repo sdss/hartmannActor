@@ -210,5 +210,6 @@ class hartmannCmd(object):
         thread.join(timeout=10)
         if thread.is_alive():
             cmd.fail('text="failed to abort thread."')
+            return
 
         cmd.finish('text="collimation aborted. Check the status of the lamps."')
