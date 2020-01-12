@@ -4,6 +4,16 @@
 Change Log
 ==========
 
+.. _changelog-1.7.1:
+
+1.7.1 (2020-01-12)
+------------------
+
+Added
+^^^^^
+* Implemented a ``hartmann abort`` command that allows to stop the collimate sequence. The ``Hartmann.collimate.__call__`` procedure is now run in a thread, which allows other commands to run while the collimation is progressing.
+
+
 .. _changelog-1.7.0:
 
 1.7.0 (2019-10-20)
