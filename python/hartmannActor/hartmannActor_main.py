@@ -46,9 +46,12 @@ class Hartmann(actorcore.Actor.Actor):
             self.models[actor] = opscore.actor.model.Model(actor)
 
         myGlobals.config = self.config
+        myGlobals.models = self.models
+        myGlobals.actor = self
 
         m, b, constants, coeff = get_collimation_constants(self.config)
         myGlobals.hartmann = boss_collimate.Hartmann(self, m, b, constants, coeff)
+        myGlobals.hartmann_thread = None
 
         # Spectrographs to process.
         myGlobals.specs = self.config.get('spec', 'specs').split(' ')
