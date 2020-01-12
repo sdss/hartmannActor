@@ -3,6 +3,7 @@
 Define available commands for hartmannActor.
 """
 
+import ctypes
 import threading
 
 import astropy.time
@@ -11,6 +12,32 @@ import opscore.protocols.types as types
 
 import hartmannActor.myGlobals as myGlobals
 from hartmannActor import boss_collimate
+
+
+def async_raise(thread_obj, exception):
+    """Raises an exception inside a thread."""
+
+    found = False
+    target_tid = 0
+
+    for tid, tobj in threading._active.items():
+        if tobj is thread_obj:
+            found = True
+            target_tid = tid
+            break
+
+    if not found:
+        raise ValueError('Invalid thread object')
+
+    ret = ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_ulong(target_tid),
+                                                     ctypes.py_object(exception))
+    # ref: http://docs.python.org/c-api/init.html#PyThreadState_SetAsyncExc
+
+    if ret == 0:
+        raise ValueError('Invalid thread ID')
+    elif ret > 1:
+        ctypes.pythonapi.PyThreadState_SetAsyncExc(target_tid, 0)
+        raise SystemError('PyThreadState_SetAsyncExc failed')
 
 
 class hartmannCmd(object):
