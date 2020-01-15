@@ -21,7 +21,7 @@ notifications:
 
 # repo branches to test
 branches:
-  - py3
+  - master
 
 before_install:
   - pip install poetry
