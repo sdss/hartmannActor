@@ -4,6 +4,16 @@
 Change Log
 ==========
 
+.. _changelog-1.8.0:
+
+1.8.0 (2020-10-17)
+------------------
+
+Changed
+^^^^^^^
+* Removed ``sp2`` from configuration file for SDSS-V operations.
+
+
 .. _changelog-1.7.1:
 
 1.7.1 (2020-01-12)
