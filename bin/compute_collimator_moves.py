@@ -2,7 +2,8 @@
 """
 Compute the collimator moves for an already-taken Hartmann pair.
 
-Defaults to using etc/hartmann.cfg for the slope and intercept, unless -m or -b are specified.
+Defaults to using etc/hartmann.cfg for the slope and intercept,
+unless -m or -b are specified.
 """
 
 import argparse
@@ -11,68 +12,82 @@ import os
 import sys
 
 from actorcore import TestHelper
-from hartmannActor import boss_collimate, hartmannActor_main
+
+from hartmannActor import boss_collimate, hartmann
 
 
 def get_expnum(filename):
     """Return the exposure number from this filename."""
-    return int(filename.split('-')[-1].split('.')[0])
+    return int(filename.split("-")[-1].split(".")[0])
 
 
 def cams_params(values):
     """Return a converted, split 'b1,r1,b2,r2' string as a dictionary."""
-    cams = ['b1', 'r1', 'b2', 'r2']
+    cams = ["b1", "r1", "b2", "r2"]
     return dict(list(zip(cams, values)))
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__, prog=os.path.basename(sys.argv[0]))
+    parser = argparse.ArgumentParser(
+        description=__doc__, prog=os.path.basename(sys.argv[0])
+    )
     parser.add_argument(
-        'FILE1', metavar='FILE1', type=str, help='The first hartmann file (generally left).')
+        "FILE1",
+        metavar="FILE1",
+        type=str,
+        help="The first hartmann file (generally left).",
+    )
     parser.add_argument(
-        'FILE2',
-        metavar='FILE2',
+        "FILE2",
+        metavar="FILE2",
         default=None,
-        nargs='?',
-        help='Optional second hartmann file (generally right).')
+        nargs="?",
+        help="Optional second hartmann file (generally right).",
+    )
     parser.add_argument(
-        '-m',
+        "-m",
         default=None,
-        dest='m',
+        dest="m",
         nargs=4,
         type=float,
-        help='Slope of the offset->motor function: b1 r1 b2 r2.')
+        help="Slope of the offset->motor function: b1 r1 b2 r2.",
+    )
     parser.add_argument(
-        '-b',
+        "-b",
         default=None,
-        dest='b',
+        dest="b",
         nargs=4,
         type=float,
-        help='Intercept of the offset->motor function: b1 r1 b2 r2.')
+        help="Intercept of the offset->motor function: b1 r1 b2 r2.",
+    )
     parser.add_argument(
-        '--bsteps',
+        "--bsteps",
         default=None,
-        dest='bsteps',
+        dest="bsteps",
         type=float,
-        help='steps per degree for the blue ring')
+        help="steps per degree for the blue ring",
+    )
     parser.add_argument(
-        '--badres',
+        "--badres",
         default=None,
-        dest='badres',
+        dest="badres",
         type=float,
-        help='tolerance for bad residual on blue ring')
+        help="tolerance for bad residual on blue ring",
+    )
     parser.add_argument(
-        '--coeff',
+        "--coeff",
         default=None,
-        dest='coeff',
+        dest="coeff",
         nargs=4,
         type=float,
-        help='"funny fudge factors": b1 r1 b2 r2.')
+        help='"funny fudge factors": b1 r1 b2 r2.',
+    )
     parser.add_argument(
-        '--noCheckImage',
-        dest='noCheckImage',
-        action='store_true',
-        help="Don't perform variance calculation for missing light.")
+        "--noCheckImage",
+        dest="noCheckImage",
+        action="store_true",
+        help="Don't perform variance calculation for missing light.",
+    )
 
     args = parser.parse_args()
 
@@ -83,32 +98,38 @@ def main(argv=None):
         indir, expnum2 = os.path.split(args.FILE2)
         expnum2 = get_expnum(expnum2)
 
-    if '/data/spectro' in indir:
+    if "/data/spectro" in indir:
         mjd = int(os.path.split(indir)[-1])
     else:
         mjd = None
 
     cmd = TestHelper.Cmd(verbose=True)
     config = configparser.ConfigParser()
-    config.read(os.environ['HARTMANNACTOR_DIR'] + '/etc/hartmann.cfg')
-    m, b, constants, coeff = hartmannActor_main.get_collimation_constants(config)
+    config.read(os.environ["HARTMANNACTOR_DIR"] + "/etc/hartmann.cfg")
+    m, b, constants, coeff = hartmann.get_collimation_constants(config)
 
     if args.m is not None:
         m = cams_params(args.m)
     if args.b is not None:
         b = cams_params(args.b)
     if args.bsteps is not None:
-        constants['bsteps'] = args.bsteps
+        constants["bsteps"] = args.bsteps
     if args.badres is not None:
-        constants['badres'] = args.badres
+        constants["badres"] = args.badres
     if args.coeff is not None:
         coeff = cams_params(args.coeff)
 
     hart = boss_collimate.Hartmann(None, m, b, constants, coeff)
 
     hart.collimate(
-        expnum1, indir=indir, mjd=mjd, cmd=cmd, plot=True, noCheckImage=args.noCheckImage)
+        expnum1,
+        indir=indir,
+        mjd=mjd,
+        cmd=cmd,
+        plot=True,
+        noCheckImage=args.noCheckImage,
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

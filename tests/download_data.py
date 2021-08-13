@@ -12,21 +12,22 @@ import os
 import sys
 import urllib.request
 
+
 test_dir = os.path.dirname(__file__)
 
-sys.path.append(os.path.join(test_dir, '../'))  # To allow absolute import
+sys.path.append(os.path.join(test_dir, "../"))  # To allow absolute import
 
 from tests.test_boss_collimate import *
 
 
-BASE_URL = 'https://data.sdss.org/sas/dr16/apo/'
+BASE_URL = "https://data.sdss.org/sas/dr16/apo/"
 
 
 files = {
     focused_dir: [focused1, focused2, notFocused1, notFocused2],
     badFFS_dir: [badFFS_1, badFFS_2],
     noLight_dir: [noLight1, noLight2],
-    sparsePlug_dir: [sparsePlug1, sparsePlug2]
+    sparsePlug_dir: [sparsePlug1, sparsePlug2],
 }
 
 
@@ -44,19 +45,19 @@ def download_data():
 
             # Download all the cameras regardless of the specific file.
             expand_files = []
-            for camera in ['r1', 'b1', 'r2', 'b2']:
-                chunks = file_.split('-')
+            for camera in ["r1", "b1", "r2", "b2"]:
+                chunks = file_.split("-")
                 chunks[1] = camera
-                expand_files.append('-'.join(chunks))
+                expand_files.append("-".join(chunks))
 
             for camera_file in expand_files:
                 url = os.path.join(BASE_URL, dir_, camera_file)
                 dest_file = os.path.join(dest_dir, camera_file)
 
                 if not os.path.exists(dest_file):
-                    print(f'Downloading {url} to {dest_file} ...')
+                    print(f"Downloading {url} to {dest_file} ...")
                     urllib.request.urlretrieve(url, dest_file)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     download_data()

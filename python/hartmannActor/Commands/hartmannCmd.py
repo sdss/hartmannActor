@@ -7,6 +7,7 @@ import ctypes
 import threading
 
 import astropy.time
+
 import opscore.protocols.keys as keys
 import opscore.protocols.types as types
 
@@ -27,17 +28,18 @@ def async_raise(thread_obj, exception):
             break
 
     if not found:
-        raise ValueError('Invalid thread object')
+        raise ValueError("Invalid thread object")
 
-    ret = ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_ulong(target_tid),
-                                                     ctypes.py_object(exception))
+    ret = ctypes.pythonapi.PyThreadState_SetAsyncExc(
+        ctypes.c_ulong(target_tid), ctypes.py_object(exception)
+    )
     # ref: http://docs.python.org/c-api/init.html#PyThreadState_SetAsyncExc
 
     if ret == 0:
-        raise ValueError('Invalid thread ID')
+        raise ValueError("Invalid thread ID")
     elif ret > 1:
         ctypes.pythonapi.PyThreadState_SetAsyncExc(target_tid, 0)
-        raise SystemError('PyThreadState_SetAsyncExc failed')
+        raise SystemError("PyThreadState_SetAsyncExc failed")
 
 
 class hartmannCmd(object):
@@ -50,53 +52,88 @@ class hartmannCmd(object):
 
         # Declare commands
         self.keys = keys.KeysDictionary(
-            'hartmann_hartmann', (1, 1),
-            keys.Key('id', types.Int(),
-                     help='first exposure number of Hartmann pair to process.'),
-            keys.Key('id2', types.Int(),
-                     help='second exposure number of Hartmann to process (default: id+1).'),
-            keys.Key('mjd', types.Int(),
-                     help='MJD of the Hartmann pair to process (default: current MJD).'),
-            keys.Key('noCorrect',
-                     help='if set, do not apply any recommended corrections.'),
-            keys.Key('noSubframe',
-                     help='if set, take fullframe images.'),
-            keys.Key('ignoreResiduals',
-                     help='if set, apply red moves regardless of resulting blue residuals.'),
-            keys.Key('noCheckImage',
-                     help='if set, do not check the flux level in the image '
-                          '(useful for sparse plugged plates).'),
-            keys.Key('minBlueCorrection',
-                     help='if set, the calculated correction for the blue ring will be '
-                          'the minimum to get in the tolerance range.'),
-            keys.Key('bypass', types.String(),
-                     help='a list of checks and systems to bypass'),
-            keys.Key('cameras', types.String(), help='a list of cameras to process'),
+            "hartmann_hartmann",
+            (1, 1),
+            keys.Key(
+                "id",
+                types.Int(),
+                help="first exposure number of Hartmann pair to process.",
+            ),
+            keys.Key(
+                "id2",
+                types.Int(),
+                help="second exposure number of Hartmann to process (default: id+1).",
+            ),
+            keys.Key(
+                "mjd",
+                types.Int(),
+                help="MJD of the Hartmann pair to process (default: current MJD).",
+            ),
+            keys.Key(
+                "noCorrect",
+                help="if set, do not apply any recommended corrections.",
+            ),
+            keys.Key(
+                "noSubframe",
+                help="if set, take fullframe images.",
+            ),
+            keys.Key(
+                "ignoreResiduals",
+                help="if set, apply red moves regardless of resulting blue residuals.",
+            ),
+            keys.Key(
+                "noCheckImage",
+                help="if set, do not check the flux level in the image "
+                "(useful for sparse plugged plates).",
+            ),
+            keys.Key(
+                "minBlueCorrection",
+                help="if set, the calculated correction for the blue ring will be "
+                "the minimum to get in the tolerance range.",
+            ),
+            keys.Key(
+                "bypass",
+                types.String(),
+                help="a list of checks and systems to bypass",
+            ),
+            keys.Key(
+                "cameras",
+                types.String(),
+                help="a list of cameras to process",
+            ),
         )
 
         self.vocab = [
-            ('ping', '', self.ping),
-            ('status', '', self.status),
-            ('collimate', '[noCorrect] [noSubframe] [ignoreResiduals] [noCheckImage] '
-                          '[minBlueCorrection] [<bypass>] [<cameras>]', self.collimate),
-            ('recompute', '<id> [<id2>] [<mjd>] [noCorrect] '
-                          '[noCheckImage] [<bypass>] [<cameras>]', self.recompute),
-            ('abort', '', self.abort)
+            ("ping", "", self.ping),
+            ("status", "", self.status),
+            (
+                "collimate",
+                "[noCorrect] [noSubframe] [ignoreResiduals] [noCheckImage] "
+                "[minBlueCorrection] [<bypass>] [<cameras>]",
+                self.collimate,
+            ),
+            (
+                "recompute",
+                "<id> [<id2>] [<mjd>] [noCorrect] "
+                "[noCheckImage] [<bypass>] [<cameras>]",
+                self.recompute,
+            ),
+            ("abort", "", self.abort),
         ]
 
     def ping(self, cmd):
         """Query the actor for liveness/happiness."""
 
-        cmd.inform('status=%s' % myGlobals.hartmannStatus)
+        cmd.inform("status=%s" % myGlobals.hartmannStatus)
         cmd.finish("text='Pong'")
 
     def status(self, cmd, finish=True):
         """Report status and version; obtain and send current data"""
 
         self.actor.sendVersionKey(cmd)
-        cmd.inform('status=%s' % myGlobals.hartmannStatus)
-        cmd.inform('specs=%s' % ','.join(myGlobals.specs))
-        cmd.inform('cameras=%s' % ','.join(myGlobals.cameras))
+        cmd.inform("status=%s" % myGlobals.hartmannStatus)
+        cmd.inform("specs=%s" % ",".join(myGlobals.specs))
+        cmd.inform("cameras=%s" % ",".join(myGlobals.cameras))
 
         if finish:
             cmd.finish()
@@ -107,32 +144,40 @@ class hartmannCmd(object):
         hartmann = myGlobals.hartmann
         keywords = cmd.cmd.keywords
 
-        expnum1 = int(keywords['id'].values[0])
-        expnum2 = int(keywords['id2'].values[0]) if 'id2' in keywords else None
+        expnum1 = int(keywords["id"].values[0])
+        expnum2 = int(keywords["id2"].values[0]) if "id2" in keywords else None
 
-        if 'mjd' in keywords:
-            mjd = int(keywords['mjd'].values[0])
+        if "mjd" in keywords:
+            mjd = int(keywords["mjd"].values[0])
         else:
             # SDSS MJD is truncated (MJD_TAI + 0.3)
             mjd = int(astropy.time.Time.now().mjd + 0.3)
 
-        moveMotors = 'noCorrect' not in keywords
-        noCheckImage = 'noCheckImage' in keywords
-        cameras = keywords['cameras'].values[0].split(',') if 'cameras' in keywords else None
+        moveMotors = "noCorrect" not in keywords
+        noCheckImage = "noCheckImage" in keywords
+        cameras = (
+            keywords["cameras"].values[0].split(",") if "cameras" in keywords else None
+        )
 
-        if 'bypass' in cmd.cmd.keywords:
-            bypass = cmd.cmd.keywords['bypass'].values[0].split(',')
+        if "bypass" in cmd.cmd.keywords:
+            bypass = cmd.cmd.keywords["bypass"].values[0].split(",")
         else:
             bypass = []
 
         hartmann.reinit()
-        hartmann.collimate(expnum1, expnum2=expnum2, mjd=mjd, cmd=cmd,
-                           noCheckImage=noCheckImage, bypass=bypass,
-                           cameras=cameras)
+        hartmann.collimate(
+            expnum1,
+            expnum2=expnum2,
+            mjd=mjd,
+            cmd=cmd,
+            noCheckImage=noCheckImage,
+            bypass=bypass,
+            cameras=cameras,
+        )
         if hartmann.success and moveMotors:
             hartmann.move_motors()
 
-        boss_collimate.update_status(cmd, 'idle')
+        boss_collimate.update_status(cmd, "idle")
         if hartmann.success:
             cmd.finish()
         else:
@@ -149,20 +194,22 @@ class hartmannCmd(object):
         keywords = cmd.cmd.keywords
 
         hartmann = myGlobals.hartmann
-        moveMotors = 'noCorrect' not in keywords
-        subFrame = 'noSubframe' not in keywords
-        ignoreResiduals = 'ignoreResiduals' in keywords
-        noCheckImage = 'noCheckImage' in keywords
-        minBlueCorrection = 'minBlueCorrection' in keywords
-        cameras = keywords['cameras'].values[0].split(',') if 'cameras' in keywords else None
+        moveMotors = "noCorrect" not in keywords
+        subFrame = "noSubframe" not in keywords
+        ignoreResiduals = "ignoreResiduals" in keywords
+        noCheckImage = "noCheckImage" in keywords
+        minBlueCorrection = "minBlueCorrection" in keywords
+        cameras = (
+            keywords["cameras"].values[0].split(",") if "cameras" in keywords else None
+        )
 
-        if 'bypass' in keywords:
-            bypass = keywords['bypass'].values[0].split(',')
+        if "bypass" in keywords:
+            bypass = keywords["bypass"].values[0].split(",")
         else:
             bypass = []
 
         if ignoreResiduals and not moveMotors:
-            cmd.fail('text=ignoreResiduals and noCorrect are mutually exclusive!')
+            cmd.fail("text=ignoreResiduals and noCorrect are mutually exclusive!")
             return
 
         hartmann.reinit()
@@ -171,13 +218,16 @@ class hartmannCmd(object):
         myGlobals.hartmann_thread = threading.Thread(
             target=hartmann,
             args=(cmd,),
-            kwargs=dict(moveMotors=moveMotors,
-                        subFrame=subFrame,
-                        ignoreResiduals=ignoreResiduals,
-                        noCheckImage=noCheckImage,
-                        minBlueCorrection=minBlueCorrection,
-                        bypass=bypass,
-                        cameras=cameras))
+            kwargs=dict(
+                moveMotors=moveMotors,
+                subFrame=subFrame,
+                ignoreResiduals=ignoreResiduals,
+                noCheckImage=noCheckImage,
+                minBlueCorrection=minBlueCorrection,
+                bypass=bypass,
+                cameras=cameras,
+            ),
+        )
         myGlobals.hartmann_thread.start()
 
     def abort(self, cmd):
@@ -192,16 +242,20 @@ class hartmannCmd(object):
         cmd.warn('text="aborting the collimation ... "')
         myGlobals.hartmann.aborting = True
 
-        cancellable_states = ('FLUSHING', 'INTEGRATING', 'PAUSED')
-        boss_state = myGlobals.models['boss'].keyVarDict['exposureState'][0]
+        cancellable_states = ("FLUSHING", "INTEGRATING", "PAUSED")
+        boss_state = myGlobals.models["boss"].keyVarDict["exposureState"][0]
 
         if boss_state in cancellable_states:
             cmd.warn('text="stopping one BOSS exposure."')
-            myGlobals.actor.cmdr.call(actor='boss', forUserCmd=cmd, cmdStr='exposure stop')
+            myGlobals.actor.cmdr.call(
+                actor="boss", forUserCmd=cmd, cmdStr="exposure stop"
+            )
 
         thread.join(timeout=60)
         if thread.is_alive():
             cmd.fail('text="failed to abort thread."')
             return
 
-        cmd.finish('text="collimation aborted. Remember to check the status of the lamps."')
+        cmd.finish(
+            'text="collimation aborted. Remember to check the status of the lamps."'
+        )

@@ -42,10 +42,8 @@ module-whatis "Sets up $product/$version in your environment."
 # A mandatory dependency is a module load command followed by a prereq
 # command.  An optional dependency is not followed by a prereq statement.
 #
-module load actorcore
-prereq actorcore
-module load sdss_python_module
-prereq sdss_python_module
+module load actorkeys
+prereq actorkeys
 #
 # ENVIRONMENT SECTION
 #

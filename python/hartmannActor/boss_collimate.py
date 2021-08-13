@@ -42,11 +42,14 @@ import numpy as np
 from astropy.time import Time
 from scipy.ndimage import interpolation
 
-import hartmannActor.myGlobals as myGlobals
 from opscore.utility.qstr import qstr
 
+import hartmannActor.myGlobals as myGlobals
+
+
 import matplotlib  # isort:skip
-matplotlib.use('Agg')  # isort:skip
+
+matplotlib.use("Agg")  # isort:skip
 
 import matplotlib.pyplot as plt  # noqa isort:skip
 
@@ -55,26 +58,31 @@ try:
     fitsio = True
     import fitsio
 except ImportError:
-    print('WARNING: fitsio not available. Using pyfits instead.')
-    print('If you install the python fitsio package, the code will run in about half the time.')
-    import pyfits
+    print("WARNING: fitsio not available. Using pyfits instead.")
+    print(
+        "If you install the python fitsio package, "
+        "the code will run in about half the time."
+    )
+    import astropy.io.fits as pyfits
+
     fitsio = False
 
 
 class HartError(Exception):
     """For known errors processing the Hartmanns"""
+
     pass
 
 
 def update_status(cmd, status):
     """update the global status value, and output the status keyword."""
     myGlobals.hartmannStatus = status
-    cmd.inform('status=%s' % qstr(status))
+    cmd.inform("status=%s" % qstr(status))
 
 
 def get_filename(indir, cam, expnum):
     """Return a full path to the the desired exposure."""
-    basename = 'sdR-%s-%08d.fit.gz'
+    basename = "sdR-%s-%08d.fit.gz"
     return os.path.join(indir, basename % (cam, expnum))
 
 
@@ -84,7 +92,9 @@ class OneCamResult(object):
     Makes multiprocessing much easier.
     """
 
-    def __init__(self, cam, success, xshift, coeff, ibest, xoffset, piston, focused, messages):
+    def __init__(
+        self, cam, success, xshift, coeff, ibest, xoffset, piston, focused, messages
+    ):
         self.cam = cam
         self.success = success
         self.xshift = xshift
@@ -96,19 +106,31 @@ class OneCamResult(object):
         self.focused = focused
 
     def __str__(self):
-        return '%s:%s : %s, %s' % (self.cam, self.success, self.xoffset, self.piston)
+        return "%s:%s : %s, %s" % (self.cam, self.success, self.xoffset, self.piston)
 
 
 class OneCam(object):
     """Collimate one camera."""
 
-    def __init__(self, m, b, bsteps, focustol, coeff, expnum1, expnum2, indir,
-                 test=False, noCheckImage=False, bypass=[]):
+    def __init__(
+        self,
+        m,
+        b,
+        bsteps,
+        focustol,
+        coeff,
+        expnum1,
+        expnum2,
+        indir,
+        test=False,
+        noCheckImage=False,
+        bypass=[],
+    ):
         """
-            Kwargs:
-            noCheckImage (bool): skip the variance calculation check for whether
-                                 there is light in the camera (useful for sparse pluggings).
-            bypass (list): bypasses to apply.
+        Kwargs:
+        noCheckImage (bool): skip the variance calculation check for whether
+                             there is light in the camera (useful for sparse pluggings).
+        bypass (list): bypasses to apply.
         """
 
         self.test = test
@@ -119,7 +141,8 @@ class OneCam(object):
         self.noCheckImage = noCheckImage
         self.bypass = bypass
 
-        # allowable focus tolerance (pixels): if offset is less than this, we're in focus.
+        # allowable focus tolerance (pixels): if offset is
+        # less than this, we're in focus.
         self.focustol = focustol
 
         # maximum pixel shift to search in X
@@ -132,37 +155,42 @@ class OneCam(object):
         # steps per degree for the blue ring.
         self.bsteps = bsteps
         # "funny fudge factors" from Kyle Dawson
-        # These values were intially determined by comparing to the original SDSS spectrographs
-        # They need to be adjusted when, e.g., the spectrograph motors are changed.
-        # pixscale = 15. vs. pixscale/24. is because of the change from SDSS to BOSS
-        pixscale = 15.  # in microns
+        # These values were initially determined by comparing to the original SDSS
+        # spectrographs They need to be adjusted when, e.g., the spectrograph motors
+        # are changed. pixscale = 15. vs. pixscale/24. is because of the change
+        # from SDSS to BOSS
+        pixscale = 15.0  # in microns
         self.fudge = {
-            'b1': coeff['b1'] * pixscale,
-            'b2': coeff['b2'] * pixscale,
-            'r1': coeff['r1'] * pixscale,
-            'r2': coeff['r2'] * pixscale
+            "b1": coeff["b1"] * pixscale,
+            "b2": coeff["b2"] * pixscale,
+            "r1": coeff["r1"] * pixscale,
+            "r2": coeff["r2"] * pixscale,
         }
 
         # region to use in the analysis. [xlow,xhigh,ylow,yhigh]
         # NOTE: this region is chosen to have no blending and strong lines.
-        # Even though there are only two lines in the blue, there should be enough signal
-        # in one line to get a good cross-correlation.
+        # Even though there are only two lines in the blue,
+        # there should be enough signal in one line to get a good cross-correlation.
         # Also, the other blue lines have a higher temperature dependence, so
         # we don't want to use them, as the arc lamp might not be warm yet.
         self.region = np.s_[850:1301, 1500:2501]
 
         self.bias_slice = [np.s_[950:1339, 10:101], np.s_[950:1339, 4250:4341]]
         self.cam_gains = {
-            'b1': [1.048, 1.048, 1.018, 1.006],
-            'b2': [1.040, 0.994, 1.002, 1.010],
-            'r1': [1.966, 1.566, 1.542, 1.546],
-            'r2': [1.598, 1.656, 1.582, 1.594]
+            "b1": [1.048, 1.048, 1.018, 1.006],
+            "b2": [1.040, 0.994, 1.002, 1.010],
+            "r1": [1.966, 1.566, 1.542, 1.546],
+            "r2": [1.598, 1.656, 1.582, 1.594],
         }
         self.gain_slice = {
-            'b': [[np.s_[0:2056, 0:2048], np.s_[56:2112, 128:2176]],
-                  [np.s_[0:2056, 2048:4096], np.s_[56:2112, 2176:4224]]],
-            'r': [[np.s_[0:2064, 0:2057], np.s_[48:2112, 119:2176]],
-                  [np.s_[0:2064, 2057:4114], np.s_[48:2112, 2176:4233]]],
+            "b": [
+                [np.s_[0:2056, 0:2048], np.s_[56:2112, 128:2176]],
+                [np.s_[0:2056, 2048:4096], np.s_[56:2112, 2176:4224]],
+            ],
+            "r": [
+                [np.s_[0:2064, 0:2057], np.s_[48:2112, 119:2176]],
+                [np.s_[0:2064, 2057:4114], np.s_[48:2112, 2176:4233]],
+            ],
         }
 
         # Did everything work?
@@ -188,14 +216,14 @@ class OneCam(object):
 
         """
 
-        if cam not in ['r1', 'r2', 'b1', 'b2']:
-            self.add_msg('e', 'text="I do not recognize camera %s"' % cam)
+        if cam not in ["r1", "r2", "b1", "b2"]:
+            self.add_msg("e", 'text="I do not recognize camera %s"' % cam)
             self.success = False
             return None
 
         self.cam = cam
 
-        self.spec = 'sp' + cam[1]
+        self.spec = "sp" + cam[1]
 
         try:
 
@@ -211,18 +239,30 @@ class OneCam(object):
         # Have to handle exceptions here, because we're called via multiprocess.
         except HartError as e:
 
-            self.add_msg('e', 'text="%s had error: %s"' % (self.cam, e))
+            self.add_msg("e", 'text="%s had error: %s"' % (self.cam, e))
             self.success = False
 
         except Exception as e:
 
-            self.add_msg('e', 'text="!!!! Unknown error when processing Hartmanns! !!!!"')
-            self.add_msg('e', 'text="%s reported %s: %s"' % (self.cam, type(e).__name__, e))
+            self.add_msg(
+                "e", 'text="!!!! Unknown error when processing Hartmanns! !!!!"'
+            )
+            self.add_msg(
+                "e", 'text="%s reported %s: %s"' % (self.cam, type(e).__name__, e)
+            )
             self.success = False
 
-        return OneCamResult(cam, self.success, self.xshift, self.coeff,
-                            self.ibest, self.xoffset, self.piston, self.focused,
-                            self.messages)
+        return OneCamResult(
+            cam,
+            self.success,
+            self.xshift,
+            self.coeff,
+            self.ibest,
+            self.xoffset,
+            self.piston,
+            self.focused,
+            self.messages,
+        )
 
     def add_msg(self, level, message):
         """Add a message to the message list to be returned."""
@@ -234,13 +274,13 @@ class OneCam(object):
         """
         # OBSCOMM only exists in dithered flats taken with "specFlats", so
         # we have to "get" it (returns None if missing), not just take it as a keyword.
-        obscomm = header.get('OBSCOMM')
-        hartmann = header.get('HARTMANN')
+        obscomm = header.get("OBSCOMM")
+        hartmann = header.get("HARTMANN")
         # Need strip() incase extra whitespace is stuck on the end.
-        if obscomm == '{focus, hartmann l}' or hartmann.strip() == 'Left':
-            return 'left'
-        elif obscomm == '{focus, hartmann r}' or hartmann.strip() == 'Right':
-            return 'right'
+        if obscomm == "{focus, hartmann l}" or hartmann.strip() == "Left":
+            return "left"
+        elif obscomm == "{focus, hartmann r}" or hartmann.strip() == "Right":
+            return "right"
         else:
             return None
 
@@ -254,46 +294,54 @@ class OneCam(object):
         sum_string = lambda field: sum([int(x) for x in field.split()])  # noqa
 
         isBad = False
-        ffs = header.get('FFS', None)
+        ffs = header.get("FFS", None)
         # 8 flat field screens: 0 for open, 1 for closed
         if ffs:
             try:
                 ffs_sum = sum_string(ffs)
                 if ffs_sum < 8:
                     self.add_msg(
-                        'w',
-                        'text="%s: Only %d of 8 flat-field petals closed: %s"' % (self.cam,
-                                                                                  ffs_sum, ffs))
+                        "w",
+                        'text="%s: Only %d of 8 flat-field petals closed: %s"'
+                        % (self.cam, ffs_sum, ffs),
+                    )
                 if ffs_sum == 0:
                     isBad = True
             except BaseException:
-                self.add_msg('w', 'text="{}: failed reading FFS info"'.format(self.cam))
+                self.add_msg("w", 'text="{}: failed reading FFS info"'.format(self.cam))
                 isBad = True
         else:
-            self.add_msg('w', "text='%s: FFS not in FITS header!'" % self.cam)
+            self.add_msg("w", "text='%s: FFS not in FITS header!'" % self.cam)
             isBad = True
 
-        if 'ffs' in self.bypass and isBad:
-            self.add_msg('w', 'text="FFS check failed but FFS are bypassed."')
+        if "ffs" in self.bypass and isBad:
+            self.add_msg("w", 'text="FFS check failed but FFS are bypassed."')
             isBad = False
 
-        Ne = header.get('NE', None)
-        HgCd = header.get('HGCD', None)
+        Ne = header.get("NE", None)
+        HgCd = header.get("HGCD", None)
         # 4 of each lamp: 0 for off, 1 for on
         if Ne is not None and HgCd is not None:
             Ne_sum = sum_string(Ne)
             HgCd_sum = sum_string(HgCd)
             if Ne_sum < 4:
                 self.add_msg(
-                    'w', "text='%s: Only %d of 4 Ne lamps turned on: %s'" % (self.cam, Ne_sum, Ne))
+                    "w",
+                    "text='%s: Only %d of 4 Ne lamps turned on: %s'"
+                    % (self.cam, Ne_sum, Ne),
+                )
             if HgCd_sum < 4:
                 self.add_msg(
-                    'w', "text='%s: Only %d of 4 HgCd lamps turned on: %s'" % (self.cam, HgCd_sum,
-                                                                               HgCd))
+                    "w",
+                    "text='%s: Only %d of 4 HgCd lamps turned on: %s'"
+                    % (self.cam, HgCd_sum, HgCd),
+                )
             if Ne_sum == 0 or HgCd_sum == 0:
                 isBad = True
         else:
-            self.add_msg('w', "text='%s: NE and/or HgCd not in FITS header.'" % self.cam)
+            self.add_msg(
+                "w", "text='%s: NE and/or HgCd not in FITS header.'" % self.cam
+            )
             isBad = True
 
         return isBad
@@ -301,11 +349,12 @@ class OneCam(object):
     def _load_data(self, indir, expnum1, expnum2):
         """
         Read in the two images, and check that headers are reasonable.
-        Sets self.bigimg[1,2] and returns True if everything is ok, else return False."""
+        Sets self.bigimg[1,2] and returns True if everything is ok, else return False.
+        """
         filename1 = get_filename(indir, self.cam, expnum1)
         filename2 = get_filename(indir, self.cam, expnum2)
         if not os.path.exists(filename1) and not os.path.exists(filename2):
-            raise HartError('All files not found: %s, %s!' % (filename1, filename2))
+            raise HartError("All files not found: %s, %s!" % (filename1, filename2))
 
         # NOTE: we don't process with sdssproc, because the subarrays cause it to fail.
         # Also, because it would restore the dependency on SoS that this class removed!
@@ -315,33 +364,37 @@ class OneCam(object):
             else:
                 header1 = pyfits.getheader(filename1, 0)
         except IOError:
-            raise HartError('Failure reading file %s' % filename1)
+            raise HartError("Failure reading file %s" % filename1)
         try:
             if fitsio:
                 header2 = fitsio.read_header(filename2, 0)
             else:
                 header2 = pyfits.getheader(filename2, 0)
         except IOError:
-            raise HartError('Failure reading file %s' % filename2)
+            raise HartError("Failure reading file %s" % filename2)
 
         if self.bad_header(header1) or self.bad_header(header2):
-            raise HartError('Incorrect header values in fits file.')
+            raise HartError("Incorrect header values in fits file.")
 
         self.hartpos1 = self.check_Hartmann_header(header1)
         self.hartpos2 = self.check_Hartmann_header(header2)
         if self.hartpos1 is None or self.hartpos2 is None:
-            raise HartError('FITS headers do not indicate these are Hartmann exposures.')
+            raise HartError(
+                "FITS headers do not indicate these are Hartmann exposures."
+            )
         if self.hartpos1 == self.hartpos2:
-            raise HartError('FITS headers indicate both exposures had same Hartmann position: %s' %
-                            self.hartpos1)
+            raise HartError(
+                "FITS headers indicate both exposures had same Hartmann position: %s"
+                % self.hartpos1
+            )
 
         # upcast the arrays, to make later math work better.
         if fitsio:
-            self.bigimg1 = np.array(fitsio.read(filename1, 0), dtype='float64')
-            self.bigimg2 = np.array(fitsio.read(filename2, 0), dtype='float64')
+            self.bigimg1 = np.array(fitsio.read(filename1, 0), dtype="float64")
+            self.bigimg2 = np.array(fitsio.read(filename2, 0), dtype="float64")
         else:
-            self.bigimg1 = np.array(pyfits.getdata(filename1, 0), dtype='float64')
-            self.bigimg2 = np.array(pyfits.getdata(filename2, 0), dtype='float64')
+            self.bigimg1 = np.array(pyfits.getdata(filename1, 0), dtype="float64")
+            self.bigimg2 = np.array(pyfits.getdata(filename2, 0), dtype="float64")
         self.header1 = header1
         self.header2 = header2
 
@@ -350,16 +403,22 @@ class OneCam(object):
         bigimg1 = self.bigimg1
         bigimg2 = self.bigimg2
         # determine bias levels
-        bias1 = [np.median(bigimg1[self.bias_slice[0]]), np.median(bigimg1[self.bias_slice[1]])]
-        bias2 = [np.median(bigimg2[self.bias_slice[0]]), np.median(bigimg2[self.bias_slice[1]])]
+        bias1 = [
+            np.median(bigimg1[self.bias_slice[0]]),
+            np.median(bigimg1[self.bias_slice[1]]),
+        ]
+        bias2 = [
+            np.median(bigimg2[self.bias_slice[0]]),
+            np.median(bigimg2[self.bias_slice[1]]),
+        ]
         # apply bias and gain to the images
         # gain_slice is a dict with keys 'r' and 'b
         gain = self.cam_gains[self.cam]
         gslice = self.gain_slice[self.cam[0]]
 
         # Only apply gain to quadrants 0 and 1, since we aren't using quadrants 2 and 3.
-        # NOTE: we are overwriting the original array, including the original bias region.
-        # This is ok, because all the processing is done on a subregion of this,
+        # NOTE: we are overwriting the original array, including the original bias
+        # region. This is ok, because all the processing is done on a subregion of this,
         # indexed from the new edge.
         bigimg1[gslice[0][0]] = gain[0] * (bigimg1[gslice[0][1]] - bias1[0])
         bigimg1[gslice[1][0]] = gain[1] * (bigimg1[gslice[1][1]] - bias1[1])
@@ -381,7 +440,7 @@ class OneCam(object):
 
         # ddof=1 for consistency with IDL's variance() which has denominator (N-1)
         # NOTE: need to keep r&b slices in sync with subFrame changes.
-        if 'b' in self.cam:
+        if "b" in self.cam:
             var1 = np.var(img1[300:450, :], ddof=1)
             var2 = np.var(img2[300:450, :], ddof=1)
         else:
@@ -390,7 +449,9 @@ class OneCam(object):
 
         if var1 < 100 or var2 < 100:
             raise HartError(
-                'THERE DOES NOT APPEAR TO BE ANY LIGHT FROM THE ARCS IN %s!!!' % self.cam)
+                "THERE DOES NOT APPEAR TO BE ANY LIGHT FROM THE ARCS IN %s!!!"
+                % self.cam
+            )
 
     def _find_shift(self, order=3):
         """
@@ -405,7 +466,7 @@ class OneCam(object):
         # spline-induced oddities there.
         subimg1 = self.bigimg1[self.region].copy()
         subimg2 = self.bigimg2[self.region].copy()
-        mask = np.ones(subimg1.shape, dtype='f8')
+        mask = np.ones(subimg1.shape, dtype="f8")
         mask[:10, :] = 0
         mask[-10:, :] = 0
         mask[:, :10] = 0
@@ -415,24 +476,29 @@ class OneCam(object):
         # Calculate the maximum product of the two images when shifting by steps of dx.
         dx = 0.05
         nshift = int(np.ceil(2 * self.maxshift / dx))
-        xshift = -self.maxshift + dx * np.arange(nshift, dtype='f8')
+        xshift = -self.maxshift + dx * np.arange(nshift, dtype="f8")
         self.xshift = xshift  # save for plotting
 
         def calc_shift(xs, img1, img2, mask):
             shifted = interpolation.shift(img2, [xs, 0], order=order, prefilter=False)
             return (img1 * shifted * mask).sum()
 
-        self.coeff = np.zeros(nshift, dtype='f8')
+        self.coeff = np.zeros(nshift, dtype="f8")
         filtered1 = interpolation.spline_filter(subimg1)
         filtered2 = interpolation.spline_filter(subimg2)
         for i in range(nshift):
-            # self.coeff[i] = (subimg1 * interpolation.shift(subimg2,
-            #                                                [xshift[i], 0],
-            #                                                order=order) * mask).sum()
-            # self.coeff[i] = (filtered1 * interpolation.shift(filtered2,
-            #                                                  [xshift[i], 0],
-            #                                                  order=order,
-            #                                                  prefilter=False) * mask).sum()
+            # self.coeff[i] = (
+            #     subimg1
+            #     * interpolation.shift(subimg2, [xshift[i], 0], order=order)
+            #     * mask
+            # ).sum()
+            # self.coeff[i] = (
+            #     filtered1
+            #     * interpolation.shift(
+            #         filtered2, [xshift[i], 0], order=order, prefilter=False
+            #     )
+            #     * mask
+            # ).sum()
             self.coeff[i] = calc_shift(xshift[i], filtered1, filtered2, mask)
 
         ibest = self.coeff.argmax()
@@ -440,7 +506,7 @@ class OneCam(object):
         self.xoffset = xshift[ibest]
         # If the sequence is actually R-L, instead of L-R,
         # then the offset acctually goes the other way.
-        if self.hartpos1 == 'right':
+        if self.hartpos1 == "right":
             self.xoffset = -self.xoffset
 
     def _find_collimator_motion(self):
@@ -459,24 +525,24 @@ class OneCam(object):
         m = self.m[self.cam]
         b = self.b[self.cam]
         if self.test:
-            b = 0.
+            b = 0.0
         offset = self.xoffset * m + b
 
         if abs(offset) < self.focustol:
-            focus = 'In Focus'
+            focus = "In Focus"
             self.focused = True
-            msglvl = 'i'
+            msglvl = "i"
         else:
-            focus = 'Out of focus'
+            focus = "Out of focus"
             self.focused = False
-            msglvl = 'w'
+            msglvl = "w"
         self.add_msg(msglvl, '%sMeanOffset=%.2f,"%s"' % (self.cam, offset, focus))
 
         piston = int(offset * self.fudge[self.cam])
-        if 'r' in self.cam:
-            self.add_msg('i', '%sPistonMove=%d' % (self.cam, piston))
+        if "r" in self.cam:
+            self.add_msg("i", "%sPistonMove=%d" % (self.cam, piston))
         else:
-            self.add_msg('i', '%sRingMove=%.1f' % (self.cam, -piston / self.bsteps))
+            self.add_msg("i", "%sRingMove=%.1f" % (self.cam, -piston / self.bsteps))
         self.piston = piston
 
 
@@ -503,19 +569,19 @@ class Hartmann(object):
         self.m = m
         self.b = b
         # steps per degree for the blue ring.
-        self.bsteps = constants['bsteps']
+        self.bsteps = constants["bsteps"]
         # tolerance for bad residual on blue ring
-        self.badres = constants['badres']
+        self.badres = constants["badres"]
         # how much pixel-to-pixel separation we allow to be "in focus"
-        self.focustol = constants['focustol']
+        self.focustol = constants["focustol"]
 
         self.coeff = coeff
 
         # the sub-frame region on the chip to read out when doing quick-hartmanns.
         self.subFrame = [850, 1400]
 
-        self.data_root_dir = '/data/spectro'
-        self.plotfilebase = 'Collimate-%05d_%08d-%08d.png'
+        self.data_root_dir = "/data/spectro"
+        self.plotfilebase = "Collimate-%05d_%08d-%08d.png"
 
         self.reinit()
 
@@ -523,18 +589,33 @@ class Hartmann(object):
         self.success = True
         self.aborting = False
         # final results go here
-        self.result = {'sp1': {'b': np.nan, 'r': np.nan}, 'sp2': {'b': np.nan, 'r': np.nan}}
-        self.full_result = {'sp1': {'b': None, 'r': None}, 'sp2': {'b': None, 'r': None}}
-        self.moves = {'sp1': 0, 'sp2': 0}
-        self.residuals = {'sp1': [0, 0., ''], 'sp2': [0, 0., '']}
-        self.bres_min = {'sp1': 0., 'sp2': 0.}
+        self.result = {
+            "sp1": {"b": np.nan, "r": np.nan},
+            "sp2": {"b": np.nan, "r": np.nan},
+        }
+        self.full_result = {
+            "sp1": {"b": None, "r": None},
+            "sp2": {"b": None, "r": None},
+        }
+        self.moves = {"sp1": 0, "sp2": 0}
+        self.residuals = {"sp1": [0, 0.0, ""], "sp2": [0, 0.0, ""]}
+        self.bres_min = {"sp1": 0.0, "sp2": 0.0}
 
         # Can't use update_status here, as we don't necessarily have a cmd available.
-        myGlobals.hartmannStatus = 'initialized'
+        myGlobals.hartmannStatus = "initialized"
 
-    def __call__(self, cmd, moveMotors=False, subFrame=True,
-                 ignoreResiduals=False, noCheckImage=False, plot=False,
-                 minBlueCorrection=False, bypass=None, cameras=None):
+    def __call__(
+        self,
+        cmd,
+        moveMotors=False,
+        subFrame=True,
+        ignoreResiduals=False,
+        noCheckImage=False,
+        plot=False,
+        minBlueCorrection=False,
+        bypass=None,
+        cameras=None,
+    ):
         """Take and reduce a pair of hartmann exposures.
 
         Usually apply the recommended collimator moves.
@@ -568,7 +649,7 @@ class Hartmann(object):
         self.cmd = cmd
 
         specs = myGlobals.specs
-        self.cmd.inform('text="Using spectrographs: {}"'.format(', '.join(specs)))
+        self.cmd.inform('text="Using spectrographs: {}"'.format(", ".join(specs)))
 
         # Check bypass type
         bypass = bypass or []
@@ -589,7 +670,8 @@ class Hartmann(object):
                 noCheckImage=noCheckImage,
                 minBlueCorrection=minBlueCorrection,
                 bypass=bypass,
-                cameras=cameras)
+                cameras=cameras,
+            )
 
             if self.success and moveMotors:
                 self._move_motors()
@@ -609,7 +691,7 @@ class Hartmann(object):
             self.cmd.error('text="%s"' % e)
             self.success = False
 
-        update_status(self.cmd, 'idle')
+        update_status(self.cmd, "idle")
 
         if self.success and not self.aborting:
             cmd.finish()
@@ -620,12 +702,12 @@ class Hartmann(object):
         """Return dict of spec:{cam:piston}."""
 
         for cam, result in zip(cams, results):
-            self.full_result['sp' + cam[1]][cam[0]] = result
-            self.result['sp' + cam[1]][cam[0]] = result.piston
+            self.full_result["sp" + cam[1]][cam[0]] = result
+            self.result["sp" + cam[1]][cam[0]] = result.piston
 
     def output_messsages(self, results):
         """Send the messages that each OneCam process produced."""
-        mdict = {'i': self.cmd.inform, 'w': self.cmd.warn, 'e': self.cmd.error}
+        mdict = {"i": self.cmd.inform, "w": self.cmd.warn, "e": self.cmd.error}
         for cam_result in results:
             for msg in cam_result.messages:
                 mdict[msg[0]](msg[1])
@@ -650,13 +732,25 @@ class Hartmann(object):
         """The guts of the collimation, to be wrapped in a try:except block."""
 
         if self.aborting:
-            raise HartError('Manual abort.')
+            raise HartError("Manual abort.")
 
-        # pool = ThreadPool(len(docams)) # NOTE: for testing with threads instead of processes
+        # NOTE: for testing with threads instead of processes
+        # pool = ThreadPool(len(docams))
+
         pool = Pool(len(docams))
 
-        oneCam = OneCam(self.m, self.b, self.bsteps, self.focustol, self.coeff,
-                        expnum1, expnum2, indir, noCheckImage=noCheckImage, bypass=self.bypass)
+        oneCam = OneCam(
+            self.m,
+            self.b,
+            self.bsteps,
+            self.focustol,
+            self.coeff,
+            expnum1,
+            expnum2,
+            indir,
+            noCheckImage=noCheckImage,
+            bypass=self.bypass,
+        )
 
         results = pool.map(oneCam, docams)
 
@@ -667,14 +761,27 @@ class Hartmann(object):
         success = dict([(x.cam, x.success) for x in results])
         if not all(success.values()):
             failures = [x for x in success if not success[x]]
-            raise HartError('Collimation calculation failed for %s.' % ','.join(failures))
+            raise HartError(
+                "Collimation calculation failed for %s." % ",".join(failures)
+            )
 
         self._bundle_result(docams, results)
 
-    def collimate(self, expnum1, expnum2=None, indir=None, mjd=None,
-                  cameras=None, test=False, ignoreResiduals=False,
-                  plot=False, cmd=None, noCheckImage=False,
-                  minBlueCorrection=False, bypass=None):
+    def collimate(
+        self,
+        expnum1,
+        expnum2=None,
+        indir=None,
+        mjd=None,
+        cameras=None,
+        test=False,
+        ignoreResiduals=False,
+        plot=False,
+        cmd=None,
+        noCheckImage=False,
+        minBlueCorrection=False,
+        bypass=None,
+    ):
         """Compute the spectrograph collimation focus from Hartmann exposures.
 
         Parameters
@@ -716,10 +823,12 @@ class Hartmann(object):
         cameras = cameras or myGlobals.cameras
         cameras = [camera for camera in cameras if int(camera[-1]) in spec_ids]
 
-        spec_cameras = {spec: [camera for camera in cameras if camera[-1] == spec[-1]]
-                        for spec in specs}
+        spec_cameras = {
+            spec: [camera for camera in cameras if camera[-1] == spec[-1]]
+            for spec in specs
+        }
 
-        self.cmd.inform('text="Processing cameras: {}"'.format(', '.join(cameras)))
+        self.cmd.inform('text="Processing cameras: {}"'.format(", ".join(cameras)))
 
         self.bypass = bypass or []
 
@@ -734,17 +843,19 @@ class Hartmann(object):
         if indir is None:
             indir = os.path.join(self.data_root_dir, str(self.mjd))
 
-        update_status(self.cmd, 'waiting on files')
+        update_status(self.cmd, "waiting on files")
 
-        files1 = [get_filename(indir, '%s' % cam, expnum1) for cam in cameras]
-        files2 = [get_filename(indir, '%s' % cam, expnum2) for cam in cameras]
+        files1 = [get_filename(indir, "%s" % cam, expnum1) for cam in cameras]
+        files2 = [get_filename(indir, "%s" % cam, expnum2) for cam in cameras]
 
         files_missing = self.file_waiter(files1 + files2)
         if files_missing is not None:
-            raise HartError('Cannot complete collimation, these files '
-                            'not found: %s' % ','.join(files_missing))
+            raise HartError(
+                "Cannot complete collimation, these files "
+                "not found: %s" % ",".join(files_missing)
+            )
 
-        update_status(self.cmd, 'processing')
+        update_status(self.cmd, "processing")
 
         try:
             self._collimate(expnum1, expnum2, indir, cameras, noCheckImage)
@@ -755,11 +866,15 @@ class Hartmann(object):
         else:
             for spec in specs:
                 if len(spec_cameras[spec]) == 0:
-                    self.cmd.warn('text="no cameras available for '
-                                  '{}: skipping."'.format(spec))
+                    self.cmd.warn(
+                        'text="no cameras available for ' '{}: skipping."'.format(spec)
+                    )
                     continue
-                self._mean_moves(spec, ignoreResiduals=ignoreResiduals,
-                                 minBlueCorrection=minBlueCorrection)
+                self._mean_moves(
+                    spec,
+                    ignoreResiduals=ignoreResiduals,
+                    minBlueCorrection=minBlueCorrection,
+                )
             if plot:
                 self.make_plot(expnum1, expnum2)
 
@@ -769,33 +884,36 @@ class Hartmann(object):
         Returns the exposure IDs of the two exposures.
         """
 
-        update_status(self.cmd, 'exposing')
+        update_status(self.cmd, "exposing")
 
         exposureIds = []
         timeLim = 120.0
-        for side in 'left', 'right':
+        for side in "left", "right":
 
             if self.aborting:
                 raise HartError
 
-            window = 'window={0},{1}'.format(*self.subFrame) if subFrame else ''
-            cmdStr = 'exposure arc hartmann=%s itime=4 %s %s' % (side, window,
-                                                                 ('noflush'
-                                                                  if side == 'right' else ''))
+            window = "window={0},{1}".format(*self.subFrame) if subFrame else ""
+            cmdStr = "exposure arc hartmann=%s itime=4 %s %s" % (
+                side,
+                window,
+                ("noflush" if side == "right" else ""),
+            )
             ret = self.actor.cmdr.call(
-                actor='boss', forUserCmd=self.cmd, cmdStr=cmdStr, timeLim=timeLim)
+                actor="boss", forUserCmd=self.cmd, cmdStr=cmdStr, timeLim=timeLim
+            )
             if ret.didFail:
                 raise HartError('Failed to take %s hartmann exposure"' % (side))
             # opscore fake-Ints don't cleanly pickle for multiprocessing.
-            exposureId = int(self.models['boss'].keyVarDict['exposureId'][0])
+            exposureId = int(self.models["boss"].keyVarDict["exposureId"][0])
             # NOTE: exposureId is a lagging indicator.
             exposureId += 1
             exposureIds.append(exposureId)
 
             mjd = Time.now().mjd
-            if self.actor.location == 'APO':
+            if self.actor.location == "APO":
                 self.mjd = int(mjd + 0.3)
-            elif self.actor.location == 'LCO':
+            elif self.actor.location == "LCO":
                 self.mjd = int(mjd + 0.5)
             else:
                 self.mjd = int(mjd)
@@ -816,12 +934,14 @@ class Hartmann(object):
             return
 
         avg = np.nanmean(list(self.result[spec].values()))
-        bres = -(self.result[spec]['b'] - avg) / self.bsteps
-        rres = self.result[spec]['r'] - avg
+        bres = -(self.result[spec]["b"] - avg) / self.bsteps
+        rres = self.result[spec]["r"] - avg
 
         if np.any(np.isnan(list(self.result[spec].values()))):
-            self.cmd.warn('text="{}: bres cannot be calculated, '
-                          'skipping blue ring correction,"'.format(spec))
+            self.cmd.warn(
+                'text="{}: bres cannot be calculated, '
+                'skipping blue ring correction,"'.format(spec)
+            )
             bres = rres = 0
 
         # Calculates the minimum blue ring correction needed to get in the
@@ -831,7 +951,7 @@ class Hartmann(object):
         if abs(bres) >= self.badres:
             bres_min = 2 * (bres - np.sign(bres) * self.badres) + np.sign(bres) * buff
         else:
-            bres_min = 0.
+            bres_min = 0.0
 
         if abs(bres) < self.badres:
             resid = '"OK"'
@@ -840,24 +960,30 @@ class Hartmann(object):
             if not minBlueCorrection:
                 resid = '"Move blue ring %.1f degrees."' % (bres * 2)
             else:
-                resid = ('"Move blue ring {0:.1f} degrees. '
-                         'This is the minimum move needed to '
-                         'get in focus tolerance."'.format(bres_min))
+                resid = (
+                    '"Move blue ring {0:.1f} degrees. '
+                    "This is the minimum move needed to "
+                    'get in focus tolerance."'.format(bres_min)
+                )
             msglvl = self.cmd.warn
         else:
             if not minBlueCorrection:
-                resid = ('"Bad angle: move blue ring %.1f degrees then rerun '
-                         'gotoField with Hartmanns checked."' % (bres * 2))
+                resid = (
+                    '"Bad angle: move blue ring %.1f degrees then rerun '
+                    'gotoField with Hartmanns checked."' % (bres * 2)
+                )
             else:
-                resid = ('"Bad angle: move blue ring %.1f degrees then '
-                         'rerun gotoField with Hartmanns checked. This is the '
-                         'minimum move needed to get in focus tolerance."' % bres_min)
+                resid = (
+                    '"Bad angle: move blue ring %.1f degrees then '
+                    "rerun gotoField with Hartmanns checked. This is the "
+                    'minimum move needed to get in focus tolerance."' % bres_min
+                )
 
             msglvl = self.cmd.warn
             self.success = False
 
-        msglvl('%sResiduals=%d,%.1f,%s' % (spec, rres, bres, resid))
-        self.cmd.inform('%sAverageMove=%d' % (spec, int(avg)))
+        msglvl("%sResiduals=%d,%.1f,%s" % (spec, rres, bres, resid))
+        self.cmd.inform("%sAverageMove=%d" % (spec, int(avg)))
         self.moves[spec] = avg
         self.residuals[spec] = [rres, bres, resid]
         self.bres_min[spec] = bres_min
@@ -880,7 +1006,7 @@ class Hartmann(object):
 
     def _move_motors(self):
         """Apply computed collimator piston moves."""
-        update_status(self.cmd, 'moving')
+        update_status(self.cmd, "moving")
         for spec in myGlobals.specs:
             piston = self.moves[spec]
             self._move_motor(spec, piston)
@@ -892,14 +1018,15 @@ class Hartmann(object):
             return
         timeLim = 30.0
         cmdVar = self.actor.cmdr.call(
-            actor='boss',
+            actor="boss",
             forUserCmd=self.cmd,
-            cmdStr='moveColl spec=%s piston=%d' % (spec, piston),
-            timeLim=timeLim)
+            cmdStr="moveColl spec=%s piston=%d" % (spec, piston),
+            timeLim=timeLim,
+        )
         if cmdVar.didFail:
-            errMsg = 'Failed to move collimator pistons for %s.' % spec
-            if 'Timeout' in cmdVar.lastReply.keywords:
-                errMsg = ' '.join((errMsg, 'Command timed out'))
+            errMsg = "Failed to move collimator pistons for %s." % spec
+            if "Timeout" in cmdVar.lastReply.keywords:
+                errMsg = " ".join((errMsg, "Command timed out"))
             raise HartError(errMsg)
 
     def _get_inset_range(result, ibest, xshift):
@@ -913,7 +1040,7 @@ class Hartmann(object):
             inset[1] = len(xshift) - 1
         return inset
 
-    def _plot_one(self, ax1, ax2, spec, shade='', marker='*'):
+    def _plot_one(self, ax1, ax2, spec, shade="", marker="*"):
         """
         Plot collimation curves for one spectrograph.
         Set shade='dark' to get the dark colors (e.g. to distinguish sp1 and sp2).
@@ -922,7 +1049,7 @@ class Hartmann(object):
         ylim2 = [0.92, 1.01]
 
         def color(cam):
-            rb = {'r': 'red', 'b': 'cyan'}
+            rb = {"r": "red", "b": "cyan"}
             return shade + rb[cam]
 
         result = self.full_result[spec]
@@ -931,44 +1058,53 @@ class Hartmann(object):
             ax1.plot(
                 result[cam].xshift,
                 result[cam].coeff / max(result[cam].coeff),
-                '*-',
+                "*-",
                 color=color(cam),
                 lw=1.5,
-                mec='none',
+                mec="none",
                 ms=6,
                 marker=marker,
-                label=cam + spec[2])
+                label=cam + spec[2],
+            )
             ax2.plot(
-                result[cam].xshift[inset[0]:inset[1]],
-                result[cam].coeff[inset[0]:inset[1]] / max(result[cam].coeff),
-                '*-',
+                result[cam].xshift[inset[0] : inset[1]],
+                result[cam].coeff[inset[0] : inset[1]] / max(result[cam].coeff),
+                "*-",
                 color=color(cam),
                 lw=1.5,
-                mec='none',
+                mec="none",
                 ms=6,
-                marker=marker)
-            ax1.axvline(result[cam].xoffset, ls='--', lw=1.2, color=color(cam))
-            ax2.axvline(result[cam].xoffset, ls='--', lw=1.2, color=color(cam))
-            plt.yticks(np.arange(0.90, 1.01, .05))
+                marker=marker,
+            )
+            ax1.axvline(result[cam].xoffset, ls="--", lw=1.2, color=color(cam))
+            ax2.axvline(result[cam].xoffset, ls="--", lw=1.2, color=color(cam))
+            plt.yticks(np.arange(0.90, 1.01, 0.05))
         ax1.set_ylim(ylim1[0], ylim1[1])
-        ax2.axis([result[cam].xshift[inset[0]], result[cam].xshift[inset[1]], ylim2[0], ylim2[1]])
-        ax1.set_xlabel('pixels')
-        ax1.set_ylabel('cross-correlation')
+        ax2.axis(
+            [
+                result[cam].xshift[inset[0]],
+                result[cam].xshift[inset[1]],
+                ylim2[0],
+                ylim2[1],
+            ]
+        )
+        ax1.set_xlabel("pixels")
+        ax1.set_ylabel("cross-correlation")
 
     def make_plot(self, expnum1, expnum2):
         """Save a plot of the pixel vs. correlation for this collimation."""
         plotfile = self.plotfilebase % (self.mjd, expnum1, expnum2)
         fig = plt.figure()
-        title = 'Collimate: MJD=%5i Exp=%08i-%08i' % (self.mjd, expnum1, expnum2)
+        title = "Collimate: MJD=%5i Exp=%08i-%08i" % (self.mjd, expnum1, expnum2)
         ax1 = fig.add_axes([0.1, 0.1, 0.8, 0.8])
         ax2 = fig.add_axes([0.35, 0.2, 0.3, 0.3])
 
-        for spec in ['sp1', 'sp2']:
-            shade = 'dark' if spec == 'sp2' else ''
-            marker = '^' if spec == 'sp2' else 's'
+        for spec in ["sp1", "sp2"]:
+            shade = "dark" if spec == "sp2" else ""
+            marker = "^" if spec == "sp2" else "s"
             self._plot_one(ax1, ax2, spec, shade=shade, marker=marker)
             ax1.set_title(title)
 
-        ax1.legend(loc='best', labelspacing=0.2, borderpad=.2)
+        ax1.legend(loc="best", labelspacing=0.2, borderpad=0.2)
 
-        plt.savefig(plotfile, bbox_inches='tight')
+        plt.savefig(plotfile, bbox_inches="tight")
