@@ -69,13 +69,6 @@ lines_after_imports = 2
 [tool.pytest.ini_options]
 addopts = "--cov hartmannActor --cov-report xml --cov-report html --cov-report term"
 
-[tool.coverage.run]
-branch = true
-include = ["python/hartmannActor/*"]
-omit = [
-    "*/__init__.py",
-]
-
 [tool.coverage.report]
 exclude_lines = [
 ]
