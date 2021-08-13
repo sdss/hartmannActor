@@ -82,7 +82,7 @@ class HartmannActor(actorcore.Actor.SDSSActor):
         myGlobals.models = self.models
         myGlobals.actor = self
 
-        m, b, constants, coeff = get_collimation_constants(self.config)
+        m, b, constants, coeff = get_collimation_constants(self.config[self.location])
         myGlobals.hartmann = boss_collimate.Hartmann(self, m, b, constants, coeff)
         myGlobals.hartmann_thread = None
 
