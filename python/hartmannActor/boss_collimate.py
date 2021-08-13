@@ -1067,8 +1067,8 @@ class Hartmann(object):
                 label=cam + spec[2],
             )
             ax2.plot(
-                result[cam].xshift[inset[0] : inset[1]],
-                result[cam].coeff[inset[0] : inset[1]] / max(result[cam].coeff),
+                result[cam].xshift[inset[0] : inset[1]],  # noqa
+                result[cam].coeff[inset[0] : inset[1]] / max(result[cam].coeff),  # noqa
                 "*-",
                 color=color(cam),
                 lw=1.5,
