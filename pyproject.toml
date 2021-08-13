@@ -53,6 +53,9 @@ hartmannActor = 'hartmannActor.hartmann:run_actor'
 line-length = 88
 target-version = ['py39']
 fast = true
+exclude = [
+    "tests/actorkeys"
+]
 
 [tool.isort]
 profile = "black"
