@@ -3,10 +3,12 @@
 
 import sys
 
+import click
 from twisted.internet import reactor
 
 import actorcore.Actor
 import opscore.actor.model
+from sdsstools.daemonizer import DaemonGroup
 
 from hartmannActor import __version__, boss_collimate, myGlobals
 
@@ -119,6 +121,11 @@ class HartmannActorLocal(HartmannActor):
     location = "LOCAL"
 
 
+@click.group(
+    cls=DaemonGroup,
+    prog="hartmannActor",
+    log_file="$HOME/logs5/hartmannActor/hartmannActor.log",
+)
 def run_actor():
 
     if len(sys.argv) > 1:
