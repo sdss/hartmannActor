@@ -778,7 +778,7 @@ dev = ["black", "flake8", "sdsstools", "twine", "wheel"]
 
 [[package]]
 name = "sdsstools"
-version = "0.4.11"
+version = "0.4.12"
 description = "Small tools for SDSS products"
 category = "main"
 optional = false
@@ -1532,8 +1532,8 @@ sdss-opscore = [
     {file = "sdss_opscore-3.0.1-py3-none-any.whl", hash = "sha256:9d43c84ec4ec6cdc5ac68c3c28cdeabf579e43da651182e788b80a7740ee20ee"},
 ]
 sdsstools = [
-    {file = "sdsstools-0.4.11-py3-none-any.whl", hash = "sha256:9a64c253cedffeeaa646949db82b0a54abd88cef888c77609a23abc4796ae4fc"},
-    {file = "sdsstools-0.4.11.tar.gz", hash = "sha256:b141ea91f43d3e29bb0897f1332818d5ec8d424a1f4bd0e605a10a3ae5c2f2e5"},
+    {file = "sdsstools-0.4.12-py3-none-any.whl", hash = "sha256:bf0565b690ebab81f02d56d4b101c6bd0f7715d8a1d3588579c4efd33db50e0f"},
+    {file = "sdsstools-0.4.12.tar.gz", hash = "sha256:010367a365959487b0fda07275083f469d55bb1a46a8022558af3a2136b0ae78"},
 ]
 semantic-version = [
     {file = "semantic_version-2.8.5-py2.py3-none-any.whl", hash = "sha256:45e4b32ee9d6d70ba5f440ec8cc5221074c7f4b0e8918bdab748cc37912440a9"},
