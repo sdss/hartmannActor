@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 """An actor to generate and process hartmann frames."""
 
-import sys
-
 import click
 from twisted.internet import reactor
 
@@ -127,13 +125,9 @@ class HartmannActorLocal(HartmannActor):
     log_file="$HOME/logs5/hartmannActor/hartmannActor.log",
 )
 def run_actor():
+    """Run hartmannActor."""
 
-    if len(sys.argv) > 1:
-        location = sys.argv[1]
-    else:
-        location = None
-
-    hartmann = HartmannActor.newActor(location=location)
+    hartmann = HartmannActor.newActor()
     hartmann.run()
 
 
