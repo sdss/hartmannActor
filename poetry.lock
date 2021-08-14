@@ -276,7 +276,7 @@ python-versions = ">=3.5"
 
 [[package]]
 name = "importlib-metadata"
-version = "4.6.3"
+version = "4.6.4"
 description = "Read metadata from Python packages"
 category = "main"
 optional = false
@@ -778,13 +778,14 @@ dev = ["black", "flake8", "sdsstools", "twine", "wheel"]
 
 [[package]]
 name = "sdsstools"
-version = "0.4.12"
+version = "0.4.13"
 description = "Small tools for SDSS products"
 category = "main"
 optional = false
 python-versions = ">=3.6,<4.0"
 
 [package.dependencies]
+daemonocle = ">=1.0.2,<2.0.0"
 docutils = ">=0.16,<0.17"
 importlib_metadata = {version = "*", markers = "python_version <= \"3.7\""}
 invoke = ">=1.3.0,<2.0.0"
@@ -1129,8 +1130,8 @@ idna = [
     {file = "idna-3.2.tar.gz", hash = "sha256:467fbad99067910785144ce333826c71fb0e63a425657295239737f7ecd125f3"},
 ]
 importlib-metadata = [
-    {file = "importlib_metadata-4.6.3-py3-none-any.whl", hash = "sha256:51c6635429c77cf1ae634c997ff9e53ca3438b495f10a55ba28594dd69764a8b"},
-    {file = "importlib_metadata-4.6.3.tar.gz", hash = "sha256:0645585859e9a6689c523927a5032f2ba5919f1f7d0e84bd4533312320de1ff9"},
+    {file = "importlib_metadata-4.6.4-py3-none-any.whl", hash = "sha256:ed5157fef23a4bc4594615a0dd8eba94b2bb36bf2a343fa3d8bb2fa0a62a99d5"},
+    {file = "importlib_metadata-4.6.4.tar.gz", hash = "sha256:7b30a78db2922d78a6f47fb30683156a14f3c6aa5cc23f77cc8967e9ab2d002f"},
 ]
 incremental = [
     {file = "incremental-21.3.0-py2.py3-none-any.whl", hash = "sha256:92014aebc6a20b78a8084cdd5645eeaa7f74b8933f70fa3ada2cfbd1e3b54321"},
@@ -1532,8 +1533,8 @@ sdss-opscore = [
     {file = "sdss_opscore-3.0.1-py3-none-any.whl", hash = "sha256:9d43c84ec4ec6cdc5ac68c3c28cdeabf579e43da651182e788b80a7740ee20ee"},
 ]
 sdsstools = [
-    {file = "sdsstools-0.4.12-py3-none-any.whl", hash = "sha256:bf0565b690ebab81f02d56d4b101c6bd0f7715d8a1d3588579c4efd33db50e0f"},
-    {file = "sdsstools-0.4.12.tar.gz", hash = "sha256:010367a365959487b0fda07275083f469d55bb1a46a8022558af3a2136b0ae78"},
+    {file = "sdsstools-0.4.13-py3-none-any.whl", hash = "sha256:758ce248bf5794cfd62eacf053f2cda2e05d3aeb561919b9db5811d76d2aed59"},
+    {file = "sdsstools-0.4.13.tar.gz", hash = "sha256:f7d2463017e71c4dcb9a6647192f8258f0242a1ae511d731b88f1fdd1ad33656"},
 ]
 semantic-version = [
     {file = "semantic_version-2.8.5-py2.py3-none-any.whl", hash = "sha256:45e4b32ee9d6d70ba5f440ec8cc5221074c7f4b0e8918bdab748cc37912440a9"},
