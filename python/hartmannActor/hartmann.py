@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 """An actor to generate and process hartmann frames."""
 
+import os
+
 import click
 from twisted.internet import reactor
 
@@ -119,10 +121,16 @@ class HartmannActorLocal(HartmannActor):
     location = "LOCAL"
 
 
+LOG_FILE = os.path.join(
+    os.environ.get("ACTOR_DAEMON_LOG_DIR", "$HOME/logs"),
+    "hartmannActor/hartmannActor.log",
+)
+
+
 @click.group(
     cls=DaemonGroup,
     prog="hartmannActor",
-    log_file="$HOME/logs5/hartmannActor/hartmannActor.log",
+    log_file=LOG_FILE,
 )
 def run_actor():
     """Run hartmannActor."""

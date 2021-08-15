@@ -10,7 +10,7 @@ spec:
   cameras: r1 b1 r2 b2
 
 logging:
-  logdir: /data/logs/actors/hartmann
+  logdir: $ACTOR_LOG_DIR/hartmann
   baseLevel: 0
   iccLevel: 10
   ioLevel: 10

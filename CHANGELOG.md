@@ -1,5 +1,12 @@
 # Changelog
 
+## Next version
+
+### ✨ Improved
+
+* Use `$ACTOR_LOG_DIR` and `$ACTOR_DAEMON_LOG_DIR` environment variables.
+
+
 ## 2.0.0 (2021-08-14)
 
 ### 🚀 New
