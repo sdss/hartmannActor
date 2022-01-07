@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.2 (2022-01-07)
+
+### 🔧 Fixed
+
+* Using only `sp1` for now.
+
+
 ## 2.0.1 (2022-01-07)
 
 ### ✨ Improved
