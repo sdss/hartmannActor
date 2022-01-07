@@ -1,6 +1,6 @@
 # Changelog
 
-## Next version
+## 2.0.1 (2022-01-07)
 
 ### ✨ Improved
 
