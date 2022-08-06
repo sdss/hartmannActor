@@ -203,6 +203,11 @@ class HartmannCamera:
                 no_check_image=no_check_image,
             )
 
+            # We assume the order is left-right, if it's actually right-left then
+            # the offset is the opposite.
+            if side1 == "right":
+                offset = -offset
+
             piston, focused = self.find_collimator_motion(offset)
 
             # Update result.
