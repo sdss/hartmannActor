@@ -26,6 +26,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
+      - name: pwd
+        run: |
+          pwd
+
       - name: ls
         run: |
           ls -la
