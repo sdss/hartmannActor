@@ -517,14 +517,14 @@ class Hartmann:
         self,
         observatory: str,
         spec: str,
-        cameras: list[str] | None,
-        command: HartmannCommandType,
+        cameras: list[str] | None = None,
+        command: HartmannCommandType | None = None,
     ):
 
         self.observatory = observatory.upper()
 
         self.spec = spec
-        self.cameras = cameras = cameras or config[self.observatory]["cameras"]
+        self.cameras = cameras = cameras or config["specs"][spec]["cameras"]
 
         if self.cameras is None or len(self.cameras) == 0:
             raise ValueError("No cameras defined.")

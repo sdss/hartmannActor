@@ -6,13 +6,11 @@ actor:
   tron_host: sdss5-hub.apo.nmsu.edu
   tron_port: 6093
 
-spec:
-  APO:
-    specs: sp1
+specs:
+  sp1:
     cameras: [r1, b1]
     exp_time: 4
-  LCO:
-    specs: sp2
+  sp2:
     cameras: [r2, b2]
     exp_time: 4
 
