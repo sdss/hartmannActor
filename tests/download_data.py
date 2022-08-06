@@ -10,7 +10,7 @@ import os
 import urllib.request
 
 
-BASE_URL = "https://data.sdss.org/sas/dr16/apo/"
+BASE_URL = "https://data.sdss.org/sas/dr17/apo/"
 
 
 def download_data():
