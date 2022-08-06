@@ -400,24 +400,29 @@ class HartmannCamera:
 
         ishifts: numpy.typing.NDArray[numpy.float32]
 
+        # Select the region for analysis.
+        analysis_slice = nslice(*config["regions"]["analysis"])
+
+        analysis1 = data1.copy()[analysis_slice]
+        analysis2 = data2.copy()[analysis_slice]
+
         # First we check if there's actually light on the images.
         # The core of the idea here is to find the variance of a region with
         # several bright lines. Low variance means no light.
         # We clip all values > 1000 to 1000 before we compute the variance,
         # to reduce the impact of a handful of bright pixels.
-        data1c = data1.copy()
-        data2c = data2.copy()
-        data1c[data1c > 1000] = 1000
-        data2c[data2c > 1000] = 1000
 
-        # Select the region we'll use for analysis
-        analysis_slice = nslice(*config["regions"]["analysis"])
-        analysis1 = data1c[analysis_slice]
-        analysis2 = data2c[analysis_slice]
+        # Get the region we use to check the variance.
+        check_slice = config["regions"]["check"][self.camera[0]]
+
+        check1 = analysis1.copy()[check_slice[0] : check_slice[1]]
+        check2 = analysis2.copy()[check_slice[0] : check_slice[1]]
+        check1[check1 > 1000] = 1000
+        check2[check2 > 1000] = 1000
 
         # ddof=1 for consistency with IDL's variance() which has denominator (N-1)
-        var1 = numpy.var(analysis1, ddof=1)
-        var2 = numpy.var(analysis2, ddof=1)
+        var1 = numpy.var(check1, ddof=1)
+        var2 = numpy.var(check2, ddof=1)
 
         if no_check_image is False and (var1 < 100 or var2 < 100):
             raise HartmannError("There does not appear to be any light from the arcs!")
