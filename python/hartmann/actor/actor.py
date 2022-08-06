@@ -17,7 +17,7 @@ from hartmann import __version__, log
 from hartmann.exceptions import HartmannError, HartmannUserWarning
 
 
-__all__ = ["HartmannActor"]
+__all__ = ["HartmannActor", "HartmannCommandType"]
 
 
 class HartmannActor(clu.LegacyActor):
@@ -54,3 +54,6 @@ class HartmannActor(clu.LegacyActor):
         log.addHandler(self.actor_handler)
         if log.warnings_logger:
             log.warnings_logger.addHandler(self.actor_handler)
+
+
+HartmannCommandType = clu.Command[HartmannActor]

@@ -548,14 +548,14 @@ python-versions = ">=3.7"
 mdurl = ">=0.1,<1.0"
 
 [package.extras]
-benchmarking = ["psutil", "pytest", "pytest-benchmark (>=3.2,<4.0)"]
-code_style = ["pre-commit (==2.6)"]
-compare = ["commonmark (>=0.9.1,<0.10.0)", "markdown (>=3.3.6,<3.4.0)", "mistletoe (>=0.8.1,<0.9.0)", "mistune (>=2.0.2,<2.1.0)", "panflute (>=2.1.3,<2.2.0)"]
-linkify = ["linkify-it-py (>=1.0,<2.0)"]
-plugins = ["mdit-py-plugins"]
+testing = ["pytest-regressions", "pytest-cov", "pytest", "coverage"]
+rtd = ["sphinx-book-theme", "sphinx-design", "sphinx-copybutton", "sphinx", "pyyaml", "myst-parser", "attrs"]
 profiling = ["gprof2dot"]
-rtd = ["attrs", "myst-parser", "pyyaml", "sphinx", "sphinx-copybutton", "sphinx-design", "sphinx-book-theme"]
-testing = ["coverage", "pytest", "pytest-cov", "pytest-regressions"]
+plugins = ["mdit-py-plugins"]
+linkify = ["linkify-it-py (>=1.0,<2.0)"]
+compare = ["panflute (>=2.1.3,<2.2.0)", "mistune (>=2.0.2,<2.1.0)", "mistletoe (>=0.8.1,<0.9.0)", "markdown (>=3.3.6,<3.4.0)", "commonmark (>=0.9.1,<0.10.0)"]
+code_style = ["pre-commit (==2.6)"]
+benchmarking = ["pytest-benchmark (>=3.2,<4.0)", "pytest", "psutil"]
 
 [[package]]
 name = "markupsafe"
@@ -596,9 +596,9 @@ python-versions = "~=3.6"
 markdown-it-py = ">=1.0.0,<3.0.0"
 
 [package.extras]
+testing = ["pytest-regressions", "pytest-cov", "pytest (>=3.6,<4)", "coverage"]
+rtd = ["sphinx-book-theme (>=0.1.0,<0.2.0)", "myst-parser (>=0.14.0,<0.15.0)"]
 code_style = ["pre-commit (==2.6)"]
-rtd = ["myst-parser (>=0.14.0,<0.15.0)", "sphinx-book-theme (>=0.1.0,<0.2.0)"]
-testing = ["coverage", "pytest (>=3.6,<4)", "pytest-cov", "pytest-regressions"]
 
 [[package]]
 name = "mdurl"
@@ -763,8 +763,8 @@ optional = false
 python-versions = ">=3.6"
 
 [package.extras]
-dev = ["pre-commit", "tox"]
-testing = ["pytest", "pytest-benchmark"]
+testing = ["pytest-benchmark", "pytest"]
+dev = ["tox", "pre-commit"]
 
 [[package]]
 name = "prompt-toolkit"
@@ -910,6 +910,20 @@ tomli = ">=1.0.0"
 testing = ["argcomplete", "hypothesis (>=3.56)", "mock", "nose", "pygments (>=2.7.2)", "requests", "xmlschema"]
 
 [[package]]
+name = "pytest-asyncio"
+version = "0.19.0"
+description = "Pytest support for asyncio"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+pytest = ">=6.1.0"
+
+[package.extras]
+testing = ["coverage (>=6.2)", "hypothesis (>=5.7.1)", "flaky (>=3.5.0)", "mypy (>=0.931)", "pytest-trio (>=0.7.0)"]
+
+[[package]]
 name = "pytest-cov"
 version = "3.0.0"
 description = "Pytest plugin for measuring coverage."
@@ -922,7 +936,7 @@ coverage = {version = ">=5.2.1", extras = ["toml"]}
 pytest = ">=4.6"
 
 [package.extras]
-testing = ["fields", "hunter", "process-tests", "six", "pytest-xdist", "virtualenv"]
+testing = ["virtualenv", "pytest-xdist", "six", "process-tests", "hunter", "fields"]
 
 [[package]]
 name = "pytest-sugar"
@@ -1017,10 +1031,10 @@ pydantic = ">=1.2,<2.0"
 types-docutils = ">=0.18,<0.19"
 
 [package.extras]
-sphinx = ["sphinx (>=4.0,<6.0)"]
-docs = ["sphinx (>=4.0,<6.0)", "sphinx-autobuild (==2021.3.14)", "m2r2 (>=0.3.2)", "sphinx-rtd-theme (<1)", "sphinx-rtd-dark-mode (>=1.2.4,<2.0.0)", "sphinx-autodoc-typehints (>=1.15)", "sphinxcontrib-apidoc (>=0.3)", "sphinxcontrib-spelling (>=7.3)"]
+docs = ["sphinxcontrib-spelling (>=7.3)", "sphinxcontrib-apidoc (>=0.3)", "sphinx-autodoc-typehints (>=1.15)", "sphinx-rtd-dark-mode (>=1.2.4,<2.0.0)", "sphinx-rtd-theme (<1)", "m2r2 (>=0.3.2)", "sphinx-autobuild (==2021.3.14)", "sphinx (>=4.0,<6.0)"]
+testing = ["mock (>=4.0)", "pytest-mock (>=3.7)", "pytest-randomly (>=3.0)", "coverage-conditional-plugin (>=0.5)", "coverage[toml] (>=6.0)", "pytest-cov (>=3.0)", "pytest (>=6.0)"]
 toml = ["tomli (>=2.0,<3.0)"]
-testing = ["pytest (>=6.0)", "pytest-cov (>=3.0)", "coverage[toml] (>=6.0)", "coverage-conditional-plugin (>=0.5)", "pytest-randomly (>=3.0)", "pytest-mock (>=3.7)", "mock (>=4.0)"]
+sphinx = ["sphinx (>=4.0,<6.0)"]
 
 [[package]]
 name = "scipy"
@@ -1211,8 +1225,8 @@ python-versions = ">=3.6"
 sphinx = ">=1.8"
 
 [package.extras]
+rtd = ["sphinx-book-theme", "myst-nb", "ipython", "sphinx"]
 code_style = ["pre-commit (==2.12.1)"]
-rtd = ["sphinx", "ipython", "myst-nb", "sphinx-book-theme"]
 
 [[package]]
 name = "sphinx-jsonschema"
@@ -1237,8 +1251,8 @@ optional = false
 python-versions = ">=3.5"
 
 [package.extras]
-lint = ["flake8", "mypy", "docutils-stubs"]
 test = ["pytest"]
+lint = ["docutils-stubs", "mypy", "flake8"]
 
 [[package]]
 name = "sphinxcontrib-devhelp"
@@ -1249,8 +1263,8 @@ optional = false
 python-versions = ">=3.5"
 
 [package.extras]
-lint = ["flake8", "mypy", "docutils-stubs"]
 test = ["pytest"]
+lint = ["docutils-stubs", "mypy", "flake8"]
 
 [[package]]
 name = "sphinxcontrib-htmlhelp"
@@ -1261,8 +1275,8 @@ optional = false
 python-versions = ">=3.6"
 
 [package.extras]
-lint = ["flake8", "mypy", "docutils-stubs"]
-test = ["pytest", "html5lib"]
+test = ["html5lib", "pytest"]
+lint = ["docutils-stubs", "mypy", "flake8"]
 
 [[package]]
 name = "sphinxcontrib-jsmath"
@@ -1273,7 +1287,7 @@ optional = false
 python-versions = ">=3.5"
 
 [package.extras]
-test = ["pytest", "flake8", "mypy"]
+test = ["mypy", "flake8", "pytest"]
 
 [[package]]
 name = "sphinxcontrib-qthelp"
@@ -1284,8 +1298,8 @@ optional = false
 python-versions = ">=3.5"
 
 [package.extras]
-lint = ["flake8", "mypy", "docutils-stubs"]
 test = ["pytest"]
+lint = ["docutils-stubs", "mypy", "flake8"]
 
 [[package]]
 name = "sphinxcontrib-serializinghtml"
@@ -1313,7 +1327,7 @@ executing = "*"
 pure-eval = "*"
 
 [package.extras]
-tests = ["pytest", "typeguard", "pygments", "littleutils", "cython"]
+tests = ["cython", "littleutils", "pygments", "typeguard", "pytest"]
 
 [[package]]
 name = "stevedore"
@@ -1383,10 +1397,10 @@ colorama = {version = ">=0.4.3,<0.5.0", optional = true, markers = "extra == \"a
 shellingham = {version = ">=1.3.0,<2.0.0", optional = true, markers = "extra == \"all\""}
 
 [package.extras]
-all = ["colorama (>=0.4.3,<0.5.0)", "shellingham (>=1.3.0,<2.0.0)"]
-dev = ["autoflake (>=1.3.1,<2.0.0)", "flake8 (>=3.8.3,<4.0.0)"]
-doc = ["mkdocs (>=1.1.2,<2.0.0)", "mkdocs-material (>=8.1.4,<9.0.0)", "mdx-include (>=1.4.1,<2.0.0)"]
-test = ["shellingham (>=1.3.0,<2.0.0)", "pytest (>=4.4.0,<5.4.0)", "pytest-cov (>=2.10.0,<3.0.0)", "coverage (>=5.2,<6.0)", "pytest-xdist (>=1.32.0,<2.0.0)", "pytest-sugar (>=0.9.4,<0.10.0)", "mypy (==0.910)", "black (>=22.3.0,<23.0.0)", "isort (>=5.0.6,<6.0.0)"]
+test = ["isort (>=5.0.6,<6.0.0)", "black (>=22.3.0,<23.0.0)", "mypy (==0.910)", "pytest-sugar (>=0.9.4,<0.10.0)", "pytest-xdist (>=1.32.0,<2.0.0)", "coverage (>=5.2,<6.0)", "pytest-cov (>=2.10.0,<3.0.0)", "pytest (>=4.4.0,<5.4.0)", "shellingham (>=1.3.0,<2.0.0)"]
+doc = ["mdx-include (>=1.4.1,<2.0.0)", "mkdocs-material (>=8.1.4,<9.0.0)", "mkdocs (>=1.1.2,<2.0.0)"]
+dev = ["flake8 (>=3.8.3,<4.0.0)", "autoflake (>=1.3.1,<2.0.0)"]
+all = ["shellingham (>=1.3.0,<2.0.0)", "colorama (>=0.4.3,<0.5.0)"]
 
 [[package]]
 name = "types-docutils"
@@ -1470,7 +1484,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9,<3.11"
-content-hash = "4b5d440b2ad368d7aedaadd64af38a10cc842c6da200cc1b87a185083e94a5ba"
+content-hash = "1d3dd6249f86ef030b68ec0007575b1b5a19c85f1f98a766406e1dc3d0939501"
 
 [metadata.files]
 aio-pika = [
@@ -2073,6 +2087,10 @@ pyrsistent = [
 pytest = [
     {file = "pytest-7.1.2-py3-none-any.whl", hash = "sha256:13d0e3ccfc2b6e26be000cb6568c832ba67ba32e719443bfe725814d3c42433c"},
     {file = "pytest-7.1.2.tar.gz", hash = "sha256:a06a0425453864a270bc45e71f783330a7428defb4230fb5e6a731fde06ecd45"},
+]
+pytest-asyncio = [
+    {file = "pytest-asyncio-0.19.0.tar.gz", hash = "sha256:ac4ebf3b6207259750bc32f4c1d8fcd7e79739edbc67ad0c58dd150b1d072fed"},
+    {file = "pytest_asyncio-0.19.0-py3-none-any.whl", hash = "sha256:7a97e37cfe1ed296e2e84941384bdd37c376453912d397ed39293e0916f521fa"},
 ]
 pytest-cov = [
     {file = "pytest-cov-3.0.0.tar.gz", hash = "sha256:e7f0f5b1617d2210a2cabc266dfe2f4c75a8d32fb89eafb7ad9d06f6d076d470"},

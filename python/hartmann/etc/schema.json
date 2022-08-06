@@ -1,6 +1,22 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "properties": {},
-  "additionalProperties": true
+  "properties": {
+    "status": { "type": "string" }
+  },
+  "patternProperties": {
+    "sp[0-9]Residuals": {
+      "type": "array",
+      "items": [
+        { "type": "integer" },
+        { "type": "number" },
+        { "type": "string" }
+      ],
+      "minItems": 3,
+      "maxItems": 3,
+      "additionalItems": false
+    },
+    "sp[0-9]AverageMove": { "type": "integer" }
+  },
+  "additionalProperties": false
 }
