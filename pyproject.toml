@@ -82,10 +82,8 @@ asyncio_mode = "auto"
 
 [tool.coverage.run]
 branch = true
-include = ["hartmann/*"]
 omit = [
-    "*/__init__.py",
-    "hartmann/__main__.py"
+    "*/__main__.py",
 ]
 
 [tool.coverage.report]
