@@ -704,7 +704,7 @@ class Hartmann:
 
         # Calculates the minimum blue ring correction needed to get in the
         # focus tolerance.
-        badres = config[self.observatory]["constants"]["badres"]
+        badres = config["constants"]["badres"]
 
         # Move to get exactly into tolerance.
         if abs(bres) >= badres:
