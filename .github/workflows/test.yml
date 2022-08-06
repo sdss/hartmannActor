@@ -26,6 +26,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
+      - name: ls
+        run: |
+          ls -la
+
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
@@ -55,7 +59,7 @@ jobs:
 
       - name: Test with pytest
         run: |
-          pip install pytest pytest-mock pytest-asyncio pytest-cov pyserial-asyncio
+          pip install pytest pytest-mock pytest-asyncio pytest-cov
           python3 tests/download_data.py
           pytest
 
