@@ -609,7 +609,7 @@ class Hartmann:
 
     async def collimate(
         self,
-        filenames: list[str],
+        filenames: list[str] | list[pathlib.Path],
         no_check_image: bool = False,
         ignore_residuals: bool = False,
         plot: bool = False,
@@ -638,11 +638,12 @@ class Hartmann:
 
         """
 
+        filenames = [str(file_) for file_ in filenames]
         filenames_camera = {c: [f for f in filenames if c in f] for c in self.cameras}
 
         for camera in self.cameras:
             if camera not in filenames_camera or len(filenames_camera[camera]) != 2:
-                raise HartmannError(f"Failed receiving some files for camera {camera}")
+                raise HartmannError(f"Failed retrieving some files for camera {camera}")
 
         self.log(logging.INFO, status="processing")
 
