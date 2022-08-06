@@ -10,7 +10,9 @@ from __future__ import annotations
 
 import pathlib
 
-from hartmann import CameraResult, HartmannCamera
+import pytest
+
+from hartmann import CameraResult, Hartmann, HartmannCamera, HartmannResult
 
 
 def get_image(image_no: int, camera: str = "b1", precooked: bool = False):
@@ -32,12 +34,42 @@ def get_image(image_no: int, camera: str = "b1", precooked: bool = False):
     return path
 
 
-async def test_hartmann_camera():
+@pytest.mark.parametrize(
+    "camera,piston,focused",
+    [
+        ("b1", 707, True),
+        ("r2", 3471, False),
+    ],
+)
+async def test_hartmann_camera(camera, piston, focused):
 
-    im1 = get_image(244721, "b1")
-    im2 = get_image(244722, "b1")
+    im1 = get_image(244721, camera)
+    im2 = get_image(244722, camera)
 
-    hc = HartmannCamera("APO", "b1")
+    hc = HartmannCamera("APO", camera)
     result = hc(im1, im2)
 
     assert isinstance(result, CameraResult)
+
+    assert result.piston == piston
+    assert result.focused is focused
+
+
+@pytest.mark.parametrize("spec,move", [("sp1", -141), ("sp2", 3311.5)])
+async def test_hartmann_not_focused(spec, move):
+
+    hartmann = Hartmann("APO", spec)
+
+    spec_id = spec[-1]
+
+    images = [
+        get_image(244721, "b" + spec_id),
+        get_image(244721, "r" + spec_id),
+        get_image(244722, "b" + spec_id),
+        get_image(244722, "r" + spec_id),
+    ]
+
+    result = await hartmann.collimate(images)
+
+    assert isinstance(result, HartmannResult)
+    assert result.move == move

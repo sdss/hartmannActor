@@ -1,11 +1,12 @@
+# Full-frame data. sp1 is focused, sp2 is not.
 spectro/57898/sdR-b1-00244721.fit.gz
 spectro/57898/sdR-b1-00244722.fit.gz
-spectro/57898/sdR-b1-00244723.fit.gz
-spectro/57898/sdR-b1-00244724.fit.gz
 spectro/57898/sdR-r1-00244721.fit.gz
 spectro/57898/sdR-r1-00244722.fit.gz
-spectro/57898/sdR-r1-00244723.fit.gz
-spectro/57898/sdR-r1-00244724.fit.gz
+spectro/57898/sdR-b2-00244721.fit.gz
+spectro/57898/sdR-b2-00244722.fit.gz
+spectro/57898/sdR-r2-00244721.fit.gz
+spectro/57898/sdR-r2-00244722.fit.gz
 
 spectro/58245/sdR-b2-00268179.fit.gz
 spectro/58245/sdR-b2-00268180.fit.gz

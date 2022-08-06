@@ -24,7 +24,7 @@ def download_data():
 
     for file_ in files:
         file_ = file_.strip()
-        if file_ == "":
+        if file_ == "" or file_.startswith("#"):
             continue
 
         url = os.path.join(BASE_URL, file_)
