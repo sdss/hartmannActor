@@ -22,7 +22,7 @@ async def test_actor(actor):
 
 async def test_actor_no_observatory(monkeypatch):
 
-    monkeypatch.delenv("OBSERVATORY")
+    monkeypatch.delenv("OBSERVATORY", raising=False)
 
     with pytest.raises(HartmannError):
         HartmannActor.from_config(config, observatory=None)
