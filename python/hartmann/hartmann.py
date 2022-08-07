@@ -351,14 +351,14 @@ class HartmannCamera:
             if Ne_sum < 4:
                 self.log(
                     logging.WARNING,
-                    f"{self.camera}: only {Ne_sum} of 4 Ne lamps turned on: {Ne}",
+                    f"{self.camera}: {Ne_sum} of 4 Ne lamps turned on: {Ne}",
                 )
+                is_bad = True
             if HgCd_sum < 4:
                 self.log(
                     logging.WARNING,
-                    f"{self.camera}: only {HgCd_sum} of 4 HgCd lamps turned on: {HgCd}",
+                    f"{self.camera}: {HgCd_sum} of 4 HgCd lamps turned on: {HgCd}",
                 )
-            if Ne_sum == 0 or HgCd_sum == 0:
                 is_bad = True
         else:
             self.log(logging.WARNING, f"{self.camera}: Ne or HgCd not in FITS header.")
