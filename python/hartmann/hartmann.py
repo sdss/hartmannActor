@@ -254,8 +254,6 @@ class HartmannCamera:
         if not os.path.exists(image):
             raise HartmannError(f"The file {image} does not exist.")
 
-        data = fits.getdata(image).astype(numpy.float32)
-
         header: fits.Header = fits.getheader(image)
 
         if no_check_image is False and self._check_header(header):
@@ -282,6 +280,9 @@ class HartmannCamera:
         # Slices for the bias regions of quadrants 0 and 1.
         bias_slice0 = nslice(*config["regions"]["bias"][0])
         bias_slice1 = nslice(*config["regions"]["bias"][1])
+
+        # Get image data
+        data = fits.getdata(image).astype(numpy.float32)
 
         # Median bias values.
         bias0 = numpy.median(data[bias_slice0])
