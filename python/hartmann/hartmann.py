@@ -195,7 +195,7 @@ class HartmannCamera:
             )
 
             if side1 == side2:
-                self.log(logging.ERROR, f"Both image were taken with the {side1} door.")
+                raise HartmannError(f"Both images were taken with the {side1} door.")
 
             ishifts, coeffs, best, offset = self.calculate_shift(
                 proc1,
@@ -220,10 +220,10 @@ class HartmannCamera:
             camera_result.success = True
 
         except HartmannError as err:
-            self.log(logging.ERROR, f"Found error: {err}")
+            raise HartmannError(f"Found error: {err}")
 
         except Exception as err:
-            self.log(logging.ERROR, f"Unexpected exception: {err}")
+            raise HartmannError(f"Unexpected exception: {err}")
 
         return camera_result
 
