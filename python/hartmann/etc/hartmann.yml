@@ -10,9 +10,11 @@ actor:
 
 specs:
   sp1:
+    observatory: APO
     cameras: [r1, b1]
     exp_time: 4
   sp2:
+    observatory: LCO
     cameras: [r2, b2]
     exp_time: 4
 

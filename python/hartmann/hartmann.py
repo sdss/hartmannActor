@@ -578,10 +578,8 @@ class Hartmann:
         if self.command is None:
             raise HartmannError("A command is needed to take Hartmann exposures.")
 
-        self.log(
-            logging.DEBUG,
-            text=f"Taking exposures with cameras: {', '.join(self.cameras)}",
-        )
+        cams = ", ".join(self.cameras)
+        self.command.info(f"Taking Hartmann exposures with cameras: {cams}")
 
         self.log(logging.INFO, status="exposing")
 
