@@ -5,6 +5,8 @@ actor:
   log_dir: /data/logs/hartmann
   tron_host: sdss5-hub.apo.nmsu.edu
   tron_port: 6093
+  models:
+    - yao
 
 specs:
   sp1:
@@ -53,3 +55,5 @@ regions:
     b: [300, 450]
     r: [0, 150]
   analysis: [850, 1301, 1500, 2501]
+
+max_collimator_move: 300

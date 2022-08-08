@@ -613,7 +613,6 @@ class Hartmann:
         filenames: list[str] | list[pathlib.Path],
         no_check_image: bool = False,
         ignore_residuals: bool = False,
-        plot: bool = False,
         min_blue_correction: bool = False,
         move_motors: bool = False,
     ) -> HartmannResult:
@@ -629,8 +628,6 @@ class Hartmann:
             is light in the camera (useful for sparse pluggings).
         ignore_residuals
             Apply red moves regardless of resulting blue residuals.
-        plot
-            Make a plot representing the calculation.
         min_blue_correction
             Calculates only the minimum blue ring correction needed to
             get the focus within the tolerance level.
@@ -675,6 +672,22 @@ class Hartmann:
             ignore_residuals=ignore_residuals,
             min_blue_correction=min_blue_correction,
         )
+
+        if move_motors:
+            if abs(hartmann_result.bres) > config["constants"]["badres"]:
+                if ignore_residuals is False:
+                    self.log(
+                        logging.ERROR,
+                        "Not moving collimator until the blue ring has been adjusted.",
+                    )
+                    return hartmann_result
+                else:
+                    self.log(
+                        logging.WARNING,
+                        "Adjusting collimator because ignore_residuals=True.",
+                    )
+
+            hartmann_result.success = await self.move_motors(hartmann_result.move)
 
         return hartmann_result
 
@@ -760,3 +773,28 @@ class Hartmann:
         )
 
         return self.result
+
+    async def move_motors(self, move: float | int):
+        """Moves the motors."""
+
+        if self.command is None:
+            raise HartmannError("Cannot move the collimator without an active command.")
+
+        move = int(move)
+
+        if move > config["max_collimator_move"]:
+            self.command.error(
+                "Move is larger than allowed move. "
+                "If you are sure, move the collimator manually "
+                "with yao mech move <MOVE>.",
+            )
+            return False
+
+        self.command.info(text=f"Adjusting collimator by {move} steps.")
+
+        move_command = await self.command.send_command("yao", f"mech move {move}")
+        if move_command.status.did_fail:
+            self.command.error(error="Failed adjusting collimator.")
+            return False
+
+        return True
