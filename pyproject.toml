@@ -28,6 +28,9 @@ astropy = "^5.0"
 sdsstools = ">=0.5.0"
 sdss-clu = "^1.6.2"
 click-default-group = "^1.2.2"
+pandas = "^1.4.3"
+seaborn = "^0.11.2"
+matplotlib = "^3.5.2"
 
 [tool.poetry.dev-dependencies]
 ipython = ">=8.0.0"
@@ -84,6 +87,7 @@ asyncio_mode = "auto"
 branch = true
 omit = [
     "*/__main__.py",
+    "*/calibration.py"
 ]
 
 [tool.coverage.report]

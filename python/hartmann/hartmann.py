@@ -132,7 +132,7 @@ class HartmannCamera:
         self.bsteps = bsteps or constants["bsteps"]
         self.focustol = focustol or constants["focustol"]
 
-        self.pixscale = 15
+        self.pixscale = constants["pixscale"]
 
         self.piston_factor = piston_factor or coefficients["piston_factor"][self.camera]
         self.piston_factor *= self.pixscale

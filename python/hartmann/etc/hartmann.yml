@@ -36,6 +36,7 @@ coefficients:
     b2: 420.3
 
 constants:
+  pixscale: 15.0
   bsteps: 319.0
   badres: 4.0
   focustol: 0.20
