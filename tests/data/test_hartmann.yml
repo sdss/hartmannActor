@@ -1,0 +1,62 @@
+actor:
+  name: hartmann
+  host: 0.0.0.0
+  port: 9988
+  log_dir: /data/logs/hartmann
+  tron_host: sdss5-hub.apo.nmsu.edu
+  tron_port: 6093
+  models:
+    - yao
+
+specs:
+  sp1:
+    observatory: APO
+    cameras: [r1, b1]
+    exp_time: 4
+  sp2:
+    observatory: LCO
+    cameras: [r2, b2]
+    exp_time: 4
+
+coefficients:
+  m:
+    b1: 1
+    r1: 1
+    b2: 1
+    r2: 1
+  b:
+    b1: -0.44
+    r1: -0.20
+    b2: -0.10
+    r2: 0.20
+  piston_factor:
+    r1: 439.8
+    b1: 428.5
+    r2: 420.8
+    b2: 420.3
+
+constants:
+  pixscale: 15.0
+  bsteps: 319.0
+  badres: 4.0
+  focustol: 0.20
+  maxshift: 2
+
+gain:
+  b1: [1.048, 1.048, 1.018, 1.006]
+  b2: [1.040, 0.994, 1.002, 1.010]
+  r1: [1.966, 1.566, 1.542, 1.546]
+  r2: [1.598, 1.656, 1.582, 1.594]
+
+regions:
+  subframe: [850, 1400]
+  bias: [[950, 1339, 10, 101], [950, 1339, 4250, 4341]]
+  data:
+    b: [[56, 2112, 128, 2176], [56, 2112, 2176, 4224]]
+    r: [[48, 2112, 119, 2176], [48, 2112, 2176, 4233]]
+  check:
+    b: [300, 450]
+    r: [0, 150]
+  analysis: [850, 1301, 1500, 2501]
+
+max_collimator_move: 300

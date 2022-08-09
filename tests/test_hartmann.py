@@ -44,12 +44,12 @@ def get_image(image_no: int, camera: str = "b1", precooked: bool = False):
         ("r2", 3471, False),
     ],
 )
-def test_hartmann_camera(camera, piston, focused):
+def test_hartmann_camera(camera, piston, focused, config):
 
     im1 = get_image(244721, camera)
     im2 = get_image(244722, camera)
 
-    hc = HartmannCamera("APO", camera)
+    hc = HartmannCamera("APO", camera, config=config)
     result = hc(im1, im2)
 
     assert isinstance(result, CameraResult)
@@ -59,11 +59,11 @@ def test_hartmann_camera(camera, piston, focused):
 
 
 @pytest.mark.parametrize("spec,move", [("sp1", -141), ("sp2", 3311.5)])
-async def test_hartmann_not_focused(spec, move):
+async def test_hartmann_not_focused(spec, move, config):
 
     command = FakeCommand(log)
 
-    hartmann = Hartmann("APO", spec, command=command)  # type: ignore
+    hartmann = Hartmann("APO", spec, command=command, config=config)  # type: ignore
 
     spec_id = spec[-1]
 
@@ -80,9 +80,9 @@ async def test_hartmann_not_focused(spec, move):
     assert result.move == move
 
 
-def test_hartmann_camera_reset():
+def test_hartmann_camera_reset(config):
 
-    hc = HartmannCamera("APO", "b1")
+    hc = HartmannCamera("APO", "b1", config=config)
     hc.reset()
 
     assert hc.observatory == "APO"
@@ -90,23 +90,23 @@ def test_hartmann_camera_reset():
     assert hc.m is not None
 
 
-def test_hartmann_camera_same_side_fails():
+def test_hartmann_camera_same_side_fails(config):
 
     im1 = get_image(244721, "b1")
     im2 = get_image(244721, "b1")
 
-    hc = HartmannCamera("APO", "b1")
+    hc = HartmannCamera("APO", "b1", config=config)
 
     with pytest.raises(HartmannError):
         hc(im1, im2)
 
 
-def test_hartmann_camera_bad_ffs(caplog):
+def test_hartmann_camera_bad_ffs(caplog, config):
 
     img1 = get_image(268179, "b2")
     img2 = get_image(268180, "b2")
 
-    hc = HartmannCamera("APO", "b2")
+    hc = HartmannCamera("APO", "b2", config=config)
 
     with pytest.raises(HartmannError):
         hc(img1, img2)
@@ -115,12 +115,12 @@ def test_hartmann_camera_bad_ffs(caplog):
     assert "b2: failed reading FFS info" in caplog.text
 
 
-def test_hartmann_camera_bad_Ne(caplog):
+def test_hartmann_camera_bad_Ne(caplog, config):
 
     img1 = get_image(169558, "r2", precooked=True)
     img2 = get_image(169559, "r2", precooked=True)
 
-    hc = HartmannCamera("APO", "r2")
+    hc = HartmannCamera("APO", "r2", config=config)
 
     with pytest.raises(HartmannError):
         hc(img1, img2)
@@ -129,12 +129,12 @@ def test_hartmann_camera_bad_Ne(caplog):
     assert "r2: 0 of 4 Ne lamps turned on: 0 0 0 0" in caplog.text
 
 
-def test_hartmann_camera_bad_HgCd(caplog):
+def test_hartmann_camera_bad_HgCd(caplog, config):
 
     img1 = get_image(169560, "r2", precooked=True)
     img2 = get_image(169561, "r2", precooked=True)
 
-    hc = HartmannCamera("APO", "r2")
+    hc = HartmannCamera("APO", "r2", config=config)
 
     with pytest.raises(HartmannError):
         hc(img1, img2)
@@ -143,25 +143,25 @@ def test_hartmann_camera_bad_HgCd(caplog):
     assert "r2: 0 of 4 HgCd lamps turned on: 0 0 0 0" in caplog.text
 
 
-def test_hartmann_camera_both_left():
+def test_hartmann_camera_both_left(config):
 
     img1 = get_image(169552, "r2", precooked=True)
     img2 = get_image(169553, "r2", precooked=True)
 
-    hc = HartmannCamera("APO", "r2")
+    hc = HartmannCamera("APO", "r2", config=config)
 
     with pytest.raises(HartmannError):
         hc(img1, img2)
 
 
-def test_hartmann_camera_command(caplog):
+def test_hartmann_camera_command(caplog, config):
 
     command = FakeCommand(log)
 
     im1 = get_image(244721, "b1")
     im2 = get_image(244722, "b1")
 
-    hc = HartmannCamera("APO", "b1", command=command)  # type: ignore
+    hc = HartmannCamera("APO", "b1", command=command, config=config)  # type: ignore
     result = hc(im1, im2)
 
     assert isinstance(result, CameraResult)
