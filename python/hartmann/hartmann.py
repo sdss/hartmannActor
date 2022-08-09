@@ -21,7 +21,8 @@ import numpy.typing
 import scipy.ndimage
 from astropy.io import fits
 
-from hartmann import config, log
+from hartmann import config as default_config
+from hartmann import log
 from hartmann.exceptions import HartmannError
 
 
@@ -102,6 +103,8 @@ class HartmannCamera:
         Factor used to calculate the piston move. The piston move is calculated
         as the measured offset times the piston factor times the pixel size in
         microns.
+    config
+        The configuration dictionary. If `None`, uses the default product one.
     command
         A CLU command object to use to output information to the users.
 
@@ -116,6 +119,7 @@ class HartmannCamera:
         bsteps: float | None = None,
         focustol: float | None = None,
         piston_factor: float | None = None,
+        config: dict | None = None,
         command: HartmannCommandType | None = None,
     ):
 
@@ -123,8 +127,10 @@ class HartmannCamera:
         self.camera = camera.lower()
         self.is_blue = self.camera[0] == "b"
 
-        coefficients = config["coefficients"]
-        constants = config["constants"]
+        self.config = config or default_config
+
+        coefficients = self.config["coefficients"]
+        constants = self.config["constants"]
 
         self.m = m or coefficients["m"][self.camera]
         self.b = b or coefficients["b"][self.camera]
@@ -278,8 +284,8 @@ class HartmannCamera:
         # use quadrants 0 and 1 for the Hartmann analysis.
 
         # Slices for the bias regions of quadrants 0 and 1.
-        bias_slice0 = nslice(*config["regions"]["bias"][0])
-        bias_slice1 = nslice(*config["regions"]["bias"][1])
+        bias_slice0 = nslice(*self.config["regions"]["bias"][0])
+        bias_slice1 = nslice(*self.config["regions"]["bias"][1])
 
         # Get image data
         data = fits.getdata(image).astype(numpy.float32)
@@ -291,11 +297,11 @@ class HartmannCamera:
         # Gains for quadrants 0 and 1.
         gain0: float
         gain1: float
-        gain0, gain1, *_ = config["gain"][self.camera]
+        gain0, gain1, *_ = self.config["gain"][self.camera]
 
         # Raw data regions for quadrants 0 and 1.
-        raw_slice0 = nslice(*config["regions"]["data"][self.camera[0]][0])
-        raw_slice1 = nslice(*config["regions"]["data"][self.camera[0]][1])
+        raw_slice0 = nslice(*self.config["regions"]["data"][self.camera[0]][0])
+        raw_slice1 = nslice(*self.config["regions"]["data"][self.camera[0]][1])
 
         raw0 = data[raw_slice0]
         raw1 = data[raw_slice1]
@@ -411,7 +417,7 @@ class HartmannCamera:
         ishifts: numpy.typing.NDArray[numpy.float32]
 
         # Select the region for analysis.
-        analysis_slice = nslice(*config["regions"]["analysis"])
+        analysis_slice = nslice(*self.config["regions"]["analysis"])
 
         analysis1 = data1.copy()[analysis_slice]
         analysis2 = data2.copy()[analysis_slice]
@@ -423,7 +429,7 @@ class HartmannCamera:
         # to reduce the impact of a handful of bright pixels.
 
         # Get the region we use to check the variance.
-        check_slice = config["regions"]["check"][self.camera[0]]
+        check_slice = self.config["regions"]["check"][self.camera[0]]
 
         check1 = analysis1.copy()[check_slice[0] : check_slice[1]]
         check2 = analysis2.copy()[check_slice[0] : check_slice[1]]
@@ -509,6 +515,8 @@ class Hartmann:
         The spectrograph to collimate.
     cameras
         The cameras to collimate. If `None`, collimates all the cameras.
+    config
+        The configuration dictionary. If `None`, default to the product one.
     command
         The currently active command, for passing info/warn messages.
 
@@ -519,13 +527,15 @@ class Hartmann:
         observatory: str,
         spec: str,
         cameras: list[str] | None = None,
+        config: dict | None = None,
         command: HartmannCommandType | None = None,
     ):
 
         self.observatory = observatory.upper()
+        self.config = config or default_config
 
         self.spec = spec
-        self.cameras = cameras = cameras or config["specs"][spec]["cameras"]
+        self.cameras = cameras = cameras or self.config["specs"][spec]["cameras"]
 
         if self.cameras is None or len(self.cameras) == 0:
             raise ValueError("No cameras defined.")
@@ -585,7 +595,7 @@ class Hartmann:
 
         # TODO: we may need to allow to select what cameras to expose.
 
-        exp_time = exp_time or config[self.observatory]["exp_time"]
+        exp_time = exp_time or self.config[self.observatory]["exp_time"]
         assert isinstance(exp_time, (float, int))
 
         command_str = "hartmann"
@@ -647,7 +657,12 @@ class Hartmann:
 
         camera_exs = []
         for camera in self.cameras:
-            obj = HartmannCamera(self.observatory, camera, command=self.command)
+            obj = HartmannCamera(
+                self.observatory,
+                camera,
+                config=self.config,
+                command=self.command,
+            )
             im1, im2 = filenames_camera[camera]
             camera_exs.append(
                 loop.run_in_executor(
@@ -672,7 +687,7 @@ class Hartmann:
         )
 
         if move_motors:
-            if abs(hartmann_result.bres) > config["constants"]["badres"]:
+            if abs(hartmann_result.bres) > self.config["constants"]["badres"]:
                 if ignore_residuals is False:
                     self.log(
                         logging.ERROR,
@@ -716,7 +731,7 @@ class Hartmann:
 
         # Calculates the minimum blue ring correction needed to get in the
         # focus tolerance.
-        badres = config["constants"]["badres"]
+        badres = self.config["constants"]["badres"]
 
         # Move to get exactly into tolerance.
         if abs(bres) >= badres:
@@ -780,7 +795,7 @@ class Hartmann:
 
         move = int(move)
 
-        if move > config["max_collimator_move"]:
+        if move > self.config["max_collimator_move"]:
             self.command.error(
                 "Move is larger than allowed move. "
                 "If you are sure, move the collimator manually "
