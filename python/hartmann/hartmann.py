@@ -315,7 +315,7 @@ class HartmannCamera:
         return proc, side
 
     def _check_header(self, header: fits.Header):
-        """Checks a header. Returns `False` if the image should not be used."""
+        """Checks a header. Returns `True` if the image should not be used."""
 
         def sum_string(string_field):
             return sum([int(x) for x in string_field.split()])
