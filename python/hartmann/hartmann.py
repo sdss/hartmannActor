@@ -349,26 +349,27 @@ class HartmannCamera:
 
         Ne = header.get("NE", None)
         HgCd = header.get("HGCD", None)
+        HeAr = header.get("HEAR", None)
 
         # 4 of each lamp: 0 for off, 1 for on
-        if Ne is not None and HgCd is not None:
-            Ne_sum = sum_string(Ne)
-            HgCd_sum = sum_string(HgCd)
-            if Ne_sum < 4:
-                self.log(
-                    logging.WARNING,
-                    f"{self.camera}: {Ne_sum} of 4 Ne lamps turned on: {Ne}",
-                )
+        for lamp, name, observatory in [
+            (Ne, "Ne", None),
+            (HgCd, "HgCd", "APO"),
+            (HeAr, "HeAr", "LCO"),
+        ]:
+            if observatory is not None and observatory != self.observatory:
+                continue
+            if lamp is not None:
+                lamp_sum = sum_string(lamp)
+                if lamp_sum < 4:
+                    self.log(
+                        logging.WARNING,
+                        f"{self.camera}: {lamp_sum} of 4 {name} lamps are on: {lamp}",
+                    )
+                    is_bad = True
+            else:
+                self.log(logging.WARNING, f"{self.camera}: {name} not in FITS header.")
                 is_bad = True
-            if HgCd_sum < 4:
-                self.log(
-                    logging.WARNING,
-                    f"{self.camera}: {HgCd_sum} of 4 HgCd lamps turned on: {HgCd}",
-                )
-                is_bad = True
-        else:
-            self.log(logging.WARNING, f"{self.camera}: Ne or HgCd not in FITS header.")
-            is_bad = True
 
         return is_bad
 
