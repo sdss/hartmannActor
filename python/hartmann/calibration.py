@@ -64,7 +64,7 @@ def calibrate(
         assert mjd is not None and exposure_0 is not None and exposure_1 is not None
 
         files = []
-        spectro_path = pathlib.Path(f"/data/spectro/{mjd}")
+        spectro_path = pathlib.Path(f"/data/spectro/{observatory.lower()}/{mjd}")
         for expno in range(exposure_0, exposure_1 + 1):
             files += list(spectro_path.glob(f"sdR-*-{expno:08d}.fit*"))
 
@@ -76,7 +76,7 @@ def calibrate(
 
     for camera in cameras:
 
-        camera_files = [file_ for file_ in files if camera in str(file_)]
+        camera_files = sorted([file_ for file_ in files if camera in str(file_)])
 
         for ifile in range(len(camera_files) - 1):
 
@@ -135,6 +135,7 @@ def calibrate(
                 continue
 
             raw_data.append((expno_1, expno_2, camera, coll_1, result.offset))
+            print((expno_1, expno_2, camera, coll_1, result.offset))
 
             processed.append(str(file1))
             processed.append(str(file2))
@@ -156,35 +157,41 @@ def calibrate(
         piston_factor *= config["constants"]["pixscale"]
 
         # Calculate the fit coefficients using a polynomial fit.
-        m, b = numpy.polyfit(data_cam.offset, data_cam.collimator, 1)
+        valid = (data_cam.offset >= -2) & (data_cam.offset <= 2)
+        m, b = numpy.polyfit(
+            data_cam.offset.loc[valid],
+            data_cam.collimator.loc[valid],
+            1,
+        )
 
         # Coeffs go in the other direction.
         m_pix = -m / piston_factor
         b_pix = -b / piston_factor
 
-        with seaborn.axes_style("darkgrid"):
+        with plt.ioff():
+            with seaborn.axes_style("darkgrid"):
 
-            seaborn.set_palette("deep")
+                seaborn.set_palette("deep")
 
-            fig, ax = plt.subplots()
+                fig, ax = plt.subplots()
 
-            ax.scatter(data_cam.offset, data_cam.collimator)
+                ax.scatter(data_cam.offset, data_cam.collimator)
 
-            xplot = numpy.linspace(data_cam.offset.min(), data_cam.offset.max(), 2)
-            yplot = m * xplot + b
-            ax.plot(xplot, yplot, "r-", label=rf"$y={m:.3f}+{b:.3f}$")
+                xplot = numpy.linspace(data_cam.offset.min(), data_cam.offset.max(), 2)
+                yplot = m * xplot + b
+                ax.plot(xplot, yplot, "r-", label=rf"$y={m:.3f}x+{b:.3f}$")
 
-            ax.legend()
-            ax.set_xlabel("Offset [pixels]")
-            ax.set_ylabel(r"Collimator [$\mu\, {\rm m}$]")
+                ax.legend()
+                ax.set_xlabel("Offset [pixels]")
+                ax.set_ylabel(r"Collimator [$\mu\, {\rm m}$]")
 
-            ax.set_title(f"{camera}: m={m_pix:.3f} b={b_pix:.3f}")
+                ax.set_title(f"{camera}: m={m_pix:.3f} b={b_pix:.3f}")
 
-            print(f"{camera}: m={m_pix:.3f} b={b_pix:.3f} [pixels]")
+                print(f"{camera}: m={m_pix:.3f} b={b_pix:.3f} [pixels]")
 
-            output = pathlib.Path(output or pathlib.Path(".").parent)
-            fig.savefig(str(output / rf"hartmann_{camera}.pdf"))
+                output = pathlib.Path(output or pathlib.Path(".").parent)
+                fig.savefig(str(output / rf"hartmann_{camera}.pdf"))
 
-            plt.close("all")
+                plt.close("all")
 
     return data
