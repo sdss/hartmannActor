@@ -715,6 +715,23 @@ class Hartmann:
 
         spec_id = self.spec[-1]
 
+        if len(results) == 0:
+            raise HartmannError("The list of results is empty.")
+        elif len(results) == 1:
+            camera = results[0].camera
+            self.log(logging.WARNING, f"Calculating collimator move for {camera} only.")
+            self.result = HartmannResult(
+                spec=self.spec,
+                camera_results=results,
+                move=results[0].piston,
+                rres=0,
+                bres=numpy.nan,
+                bres_min=numpy.nan,
+                residual_message="",
+                success=True,
+            )
+            return self.result
+
         r_result, b_result = results
         if r_result.camera != f"r{spec_id}":
             r_result, b_result = b_result, r_result
