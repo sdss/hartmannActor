@@ -40,6 +40,7 @@ doc8 = ">=0.8.0"
 pytest = ">=5.2.2"
 pytest-cov = ">=2.8.1"
 pytest-sugar = ">=0.9.2"
+pytest-asyncio = ">=0.19.0"
 isort = ">=4.3.21"
 codecov = ">=2.0.15"
 coverage = {version = ">=5.0", extras = ["toml"]}
@@ -57,10 +58,6 @@ furo = ">=2021.6.18-beta.36"
 nox = ">=2021.6.12"
 sphinx-autobuild = ">=2021.3.14"
 sphinx-copybutton = ">=0.3.3"
-
-
-[tool.poetry.group.dev.dependencies]
-pytest-asyncio = "^0.19.0"
 
 [tool.poetry.scripts]
 hartmann = 'hartmann.__main__:hartmann'
