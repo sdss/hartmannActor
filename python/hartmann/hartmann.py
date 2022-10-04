@@ -280,37 +280,31 @@ class HartmannCamera:
         else:
             raise HartmannError(f"Cannot determine Hartmann side for image {image}.")
 
-        # Quadrants are 0 to 3 CCW starting with the lower-left quadrant. We only
-        # use quadrants 0 and 1 for the Hartmann analysis.
-
-        # Slices for the bias regions of quadrants 0 and 1.
-        bias_slice0 = nslice(*self.config["regions"]["bias"][0])
-        bias_slice1 = nslice(*self.config["regions"]["bias"][1])
-
         # Get image data
         data = fits.getdata(image).astype(numpy.float32)
 
-        # Median bias values.
-        bias0 = numpy.median(data[bias_slice0])
-        bias1 = numpy.median(data[bias_slice1])
+        # Raw data regions for quadrants 1 through 4. Apply gain and reconstruct.
+        # Quadrants are 1 to 4
+        #   [ 3  4 ]
+        #   [ 1  2 ]
 
-        # Gains for quadrants 0 and 1.
-        gain0: float
-        gain1: float
-        gain0, gain1, *_ = self.config["gain"][self.camera]
+        proc_quads: list[numpy.ndarray] = []
 
-        # Raw data regions for quadrants 0 and 1.
-        raw_slice0 = nslice(*self.config["regions"]["data"][self.camera[0]][0])
-        raw_slice1 = nslice(*self.config["regions"]["data"][self.camera[0]][1])
+        for qq in range(1, 5):
+            q_slice = nslice(*self.config["regions"]["data"][qq])
+            q_raw = data[q_slice]
 
-        raw0 = data[raw_slice0]
-        raw1 = data[raw_slice1]
+            gain = self.config["gain"][self.camera][qq - 1]
 
-        # Subtract bias and apply gain correction.
-        proc0 = gain0 * (raw0 - bias0)
-        proc1 = gain1 * (raw1 - bias1)
+            bias_slice = nslice(*self.config["regions"]["bias"][qq])
+            q_bias = numpy.median(data[bias_slice])
 
-        proc = numpy.hstack((proc0, proc1))
+            q_proc = gain * (q_raw - q_bias)
+            proc_quads.append(q_proc)
+
+        bottom = numpy.hstack((proc_quads[0], proc_quads[1]))
+        top = numpy.hstack((proc_quads[2], proc_quads[3]))
+        proc = numpy.vstack((bottom, top))
 
         return proc, side
 
@@ -418,7 +412,7 @@ class HartmannCamera:
         ishifts: numpy.typing.NDArray[numpy.float32]
 
         # Select the region for analysis.
-        analysis_slice = nslice(*self.config["regions"]["analysis"])
+        analysis_slice = nslice(*self.config["regions"]["analysis"][self.camera])
 
         analysis1 = data1.copy()[analysis_slice]
         analysis2 = data2.copy()[analysis_slice]
