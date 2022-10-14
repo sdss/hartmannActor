@@ -28,10 +28,10 @@ if TYPE_CHECKING:
 @hartmann_parser.command()
 @click.option("--spec", "-s", type=str, help="The spectrograph to collimate.")
 @click.option(
-    "--full-frame",
-    "-f",
+    "--sub-frame",
+    "-s",
     is_flag=True,
-    help="Takes a full-frame Hartmann pair.",
+    help="Takes a sub-frame Hartmann pair.",
 )
 @click.option("--move/--no-move", default=True, help="Move the collimator.")
 @click.option(
@@ -46,13 +46,27 @@ if TYPE_CHECKING:
     is_flag=True,
     help="Ignore blue residuals and apply collimator correction.",
 )
+@click.option(
+    "--no-lamps",
+    "-l",
+    is_flag=True,
+    help="Do not turn on/off lamps.",
+)
+@click.option(
+    "--keep-lamps",
+    "-k",
+    is_flag=True,
+    help="Do not turn off the lamps after the Hartmann.",
+)
 async def collimate(
     command: HartmannCommandType,
     spec: str | None = None,
     move: bool = True,
-    full_frame: bool = False,
+    sub_frame: bool = False,
     min_blue_correction: bool = False,
     ignore_residuals: bool = False,
+    no_lamps: bool = False,
+    keep_lamps: bool = False,
 ):
     """Exposes BOSS and adjusts the collimator."""
 
@@ -68,8 +82,12 @@ async def collimate(
 
     result: HartmannResult | None = None
     try:
-        filenames = await hartmann.take_hartmanns(sub_frame=not full_frame)
-        result = await collimate(
+        filenames = await hartmann.take_hartmanns(
+            sub_frame=sub_frame,
+            lamps=not no_lamps,
+            keep_lamps=keep_lamps,
+        )
+        result = await hartmann.collimate(
             filenames,
             ignore_residuals=ignore_residuals,
             min_blue_correction=min_blue_correction,

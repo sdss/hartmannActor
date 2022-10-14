@@ -557,8 +557,10 @@ class Hartmann:
 
     async def take_hartmanns(
         self,
-        sub_frame: bool | list = True,
+        sub_frame: bool | list = False,
         exp_time: float | None = None,
+        lamps: bool = True,
+        keep_lamps: bool = False,
     ) -> list[str]:
         """Takes a pair of Hartmann exposures.
 
@@ -568,6 +570,8 @@ class Hartmann:
             Only readout a part of the chip.
         exp_time
             The exposure time for the Hartmanns.
+        keep_lamps
+            Do not turn off the lamps after the Hartmann.
 
         Returns
         -------
@@ -580,14 +584,27 @@ class Hartmann:
         if self.command is None:
             raise HartmannError("A command is needed to take Hartmann exposures.")
 
+        LAMPS = self.config[self.spec].get("lamps", [])
+
+        # Turn lamps on
+        if lamps is True:
+            self.command.info("Turning lamps on.")
+            results = await asyncio.gather(
+                *[self.command.send_command("lcolamps", f"on {ll}") for ll in LAMPS]
+            )
+            for result in results:
+                if result.status.did_fail:
+                    raise HartmannError(
+                        "Failed turning on lamps. Some lamps may still be on."
+                    )
+
         cams = ", ".join(self.cameras)
         self.command.info(f"Taking Hartmann exposures with cameras: {cams}")
 
         self.log(logging.INFO, status="exposing")
 
         # TODO: we may need to allow to select what cameras to expose.
-
-        exp_time = exp_time or self.config[self.observatory]["exp_time"]
+        exp_time = exp_time or self.config["specs"][self.spec]["exp_time"]
         assert isinstance(exp_time, (float, int))
 
         command_str = "hartmann"
@@ -600,11 +617,29 @@ class Hartmann:
         if hartmann_command.status.did_fail:
             raise HartmannError("Failed taking Hartmann exposures.")
 
+        # Turn lamps off
+        if lamps is True:
+            if keep_lamps is False:
+                self.command.info("Turning lamps off.")
+                results = await asyncio.gather(
+                    *[
+                        self.command.send_command("lcolamps", f"off {ll}")
+                        for ll in LAMPS
+                    ]
+                )
+                for result in results:
+                    if result.status.did_fail:
+                        raise HartmannError(
+                            "Failed turning on lamps. Some lamps may still be on."
+                        )
+            else:
+                self.command.warning("Keeping lamps on.")
+
         # Get all the filenames output by the command, unsorted for now.
         filenames: list[str] = []
         for reply in hartmann_command.replies:
             if "filename" in reply.message:
-                filenames.append(reply.message["filename"])
+                filenames.append(reply.message["filename"][0])
 
         return filenames
 
