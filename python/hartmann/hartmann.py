@@ -813,7 +813,7 @@ class Hartmann:
             msglvl = logging.WARNING
             success = False
 
-        residuals = [int(rres), f"{bres:.1f}", resmsg]
+        residuals = [int(rres), round(bres, 1), resmsg]
         self.log(msglvl, **{f"{self.spec}Residuals": residuals})
 
         self.log(logging.INFO, **{f"{self.spec}AverageMove": int(avg)})
