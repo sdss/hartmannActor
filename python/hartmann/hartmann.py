@@ -423,11 +423,8 @@ class HartmannCamera:
         # We clip all values > 1000 to 1000 before we compute the variance,
         # to reduce the impact of a handful of bright pixels.
 
-        # Get the region we use to check the variance.
-        check_slice = self.config["regions"]["check"][self.camera[0]]
-
-        check1 = analysis1.copy()[check_slice[0] : check_slice[1]]
-        check2 = analysis2.copy()[check_slice[0] : check_slice[1]]
+        check1 = analysis1.copy()
+        check2 = analysis2.copy()
         check1[check1 > 1000] = 1000
         check2[check2 > 1000] = 1000
 
