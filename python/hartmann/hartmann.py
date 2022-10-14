@@ -172,6 +172,7 @@ class HartmannCamera:
         image1: str | pathlib.Path,
         image2: str | pathlib.Path,
         no_check_image: bool = False,
+        analysis_region: list | tuple | None = None,
     ) -> CameraResult:
         """Processes two images and returns the result of the Hartmann analysis.
 
@@ -185,6 +186,12 @@ class HartmannCamera:
         no_check_image
             Skip the header and variance calculation check for whether there
             is light in the camera (useful for sparse pluggings).
+        analysis_region
+            The region of the image on which to run the Hartmann analysis.
+            If provided it must be a tuple with the format
+            ``(y0, y1, x0, x1)`` describing the vertices of the analysis
+            region. If not provided, the analysis region defined in
+            the configuration file will be used.
 
         """
 
@@ -209,6 +216,7 @@ class HartmannCamera:
                 proc1,
                 proc2,
                 no_check_image=no_check_image,
+                analysis_region=analysis_region,
             )
 
             # We assume the order is left-right, if it's actually right-left then
@@ -374,6 +382,7 @@ class HartmannCamera:
         data1: numpy.typing.NDArray[numpy.float32],
         data2: numpy.typing.NDArray[numpy.float32],
         no_check_image: bool = False,
+        analysis_region: list | tuple | None = None,
     ):
         """Checks the data and calculates the shift, in pixels.
 
@@ -395,6 +404,12 @@ class HartmannCamera:
         no_check_image
             Skip the variance calculation check for whether there is light
             in the camera (useful for sparse pluggings).
+        analysis_region
+            The region of the image on which to run the Hartmann analysis.
+            If provided it must be a tuple with the format
+            ``(y0, y1, x0, x1)`` describing the vertices of the analysis
+            region. If not provided, the analysis region defined in
+            the configuration file will be used.
 
         Returns
         -------
@@ -414,7 +429,10 @@ class HartmannCamera:
         ishifts: numpy.typing.NDArray[numpy.float32]
 
         # Select the region for analysis.
-        analysis_slice = nslice(*self.config["regions"]["analysis"][self.camera])
+        if analysis_region is not None:
+            analysis_slice = nslice(*analysis_region)
+        else:
+            analysis_slice = nslice(*self.config["regions"]["analysis"][self.camera])
 
         analysis1 = data1.copy()[analysis_slice]
         analysis2 = data2.copy()[analysis_slice]
