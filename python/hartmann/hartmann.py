@@ -10,9 +10,11 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import multiprocessing
 import os
 import pathlib
 from dataclasses import dataclass
+from functools import partial
 
 from typing import TYPE_CHECKING
 
@@ -41,7 +43,7 @@ def nslice(i0: int, i1: int, j0: int, j1: int):
     return numpy.s_[i0:i1, j0:j1]
 
 
-def _shift_product(shift, data1, data2, order=3, mask=None, prefilter=False):
+def _shift_product(data1, data2, shift, order=3, mask=None, prefilter=False):
     """Shifts ``data2`` by ``shift`` pixels in the first axis
     and computes the sum of the product of the images.
 
@@ -456,7 +458,9 @@ class HartmannCamera:
 
         # Apply the shift filter and calculate the product of the shifted images
         # for each shift value in ishift.
-        coeffs = [_shift_product(ii, filtered1, filtered2, mask=mask) for ii in ishifts]
+        with multiprocessing.Pool(4) as pool:
+            func = partial(_shift_product, filtered1, filtered2, mask=mask)
+            coeffs = pool.map(func, ishifts)
 
         best = numpy.argmax(coeffs)
         offset: float = ishifts[best]
