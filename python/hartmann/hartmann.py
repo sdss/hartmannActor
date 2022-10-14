@@ -488,11 +488,6 @@ class HartmannCamera:
     def find_collimator_motion(self, offset: float):
         """Compute the required collimator movement."""
 
-        m = self.m
-        b = self.b
-
-        offset = offset * m + b
-
         if abs(offset) < self.focustol:
             focus = "In Focus"
             focused = True
@@ -508,10 +503,12 @@ class HartmannCamera:
                 **{f"{self.camera}MeanOffset": [round(offset, 2), focus]},
             )
 
-        piston = int(offset * self.piston_factor)
+        m = self.m
+        piston = -int(m * offset)
+
         if self.command:
             if "r" in self.camera:
-                self.command.info(**{f"{self.camera}PistonMove": int(piston)})
+                self.command.info(**{f"{self.camera}PistonMove": piston})
             else:
                 self.command.info(
                     **{f"{self.camera}RingMove": round(-piston / self.bsteps, 1)}
