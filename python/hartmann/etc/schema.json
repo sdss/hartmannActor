@@ -16,7 +16,9 @@
       "maxItems": 3,
       "additionalItems": false
     },
-    "sp[0-9]AverageMove": { "type": "integer" }
+    "sp[0-9]AverageMove": { "type": "integer" },
+    "[rb][0-9]PistonMove": { "type": "integer" },
+    "[rb][0-9]RingMove": { "type": "number" }
   },
   "additionalProperties": false
 }

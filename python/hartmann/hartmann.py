@@ -483,15 +483,17 @@ class HartmannCamera:
         if self.command:
             self.command.write(
                 msglvl,
-                f'{self.camera}MeanOffset={offset:.2f},"{focus}"',
+                **{f"{self.camera}MeanOffset": [round(offset, 2), focus]},
             )
 
         piston = int(offset * self.piston_factor)
         if self.command:
             if "r" in self.camera:
-                self.command.info(f"{self.camera}PistonMove={piston:d}")
+                self.command.info(**{f"{self.camera}PistonMove": int(piston)})
             else:
-                self.command.info(f"{self.camera}RingMove={-piston / self.bsteps:.1f}")
+                self.command.info(
+                    **{f"{self.camera}RingMove": round(-piston / self.bsteps, 1)}
+                )
 
         return piston, focused
 
