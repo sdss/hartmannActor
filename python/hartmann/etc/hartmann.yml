@@ -17,7 +17,7 @@ specs:
   sp2:
     observatory: LCO
     cameras: [r2, b2]
-    exp_time: 4
+    exp_time: 10
     lamps: [Ne, HeAr]
 
 coefficients:
