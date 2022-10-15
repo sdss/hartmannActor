@@ -605,18 +605,16 @@ class Hartmann:
         if self.command is None:
             raise HartmannError("A command is needed to take Hartmann exposures.")
 
-        LAMPS = self.config[self.spec].get("lamps", [])
+        LAMPS = self.config["specs"][self.spec].get("lamps", [])
 
         # Turn lamps on
         if lamps is True:
             self.command.info("Turning lamps on.")
-            results = await asyncio.gather(
-                *[self.command.send_command("lcolamps", f"on {ll}") for ll in LAMPS]
-            )
-            for result in results:
+            for ll in LAMPS:
+                result = await self.command.send_command("lcolamps", f"on {ll}")
                 if result.status.did_fail:
                     raise HartmannError(
-                        "Failed turning on lamps. Some lamps may still be on."
+                        f"Failed turning on lamp {ll}. Some lamps may still be on."
                     )
 
         cams = ", ".join(self.cameras)
@@ -642,17 +640,13 @@ class Hartmann:
         if lamps is True:
             if keep_lamps is False:
                 self.command.info("Turning lamps off.")
-                results = await asyncio.gather(
-                    *[
-                        self.command.send_command("lcolamps", f"off {ll}")
-                        for ll in LAMPS
-                    ]
-                )
-                for result in results:
+                for ll in LAMPS:
+                    result = await self.command.send_command("lcolamps", f"off {ll}")
                     if result.status.did_fail:
                         raise HartmannError(
-                            "Failed turning on lamps. Some lamps may still be on."
+                            f"Failed turning off lamp {ll}. Some lamps may still be on."
                         )
+
             else:
                 self.command.warning("Keeping lamps on.")
 
