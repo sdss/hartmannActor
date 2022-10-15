@@ -16,6 +16,13 @@
       "maxItems": 3,
       "additionalItems": false
     },
+    "[rb][0-9]MeanOffset": {
+      "type": "array",
+      "items": [{ "type": "number" }, { "type": "string" }],
+      "minItems": 2,
+      "maxItems": 2,
+      "additionalItems": false
+    },
     "sp[0-9]AverageMove": { "type": "integer" },
     "[rb][0-9]PistonMove": { "type": "integer" },
     "[rb][0-9]RingMove": { "type": "number" }
