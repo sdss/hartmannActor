@@ -16,7 +16,7 @@ import pathlib
 from dataclasses import dataclass
 from functools import partial
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import numpy
 import numpy.typing
@@ -282,8 +282,8 @@ class HartmannCamera:
             raise HartmannError(f"Failed verifying image {image}.")
 
         # OBSCOMM only exists in dithered flats taken with "specFlats"
-        obscomm: str | None = header.get("OBSCOMM")
-        hartmann: str | None = header.get("HARTMANN")
+        obscomm: str | None = header.get("OBSCOMM", None)  # type: ignore
+        hartmann: str | None = header.get("HARTMANN", None)  # type: ignore
 
         if obscomm == "{focus, hartmann l}":
             side = "left"
@@ -297,7 +297,7 @@ class HartmannCamera:
             raise HartmannError(f"Cannot determine Hartmann side for image {image}.")
 
         # Get image data
-        data = fits.getdata(image).astype(numpy.float32)
+        data = cast(numpy.ndarray, fits.getdata(image)).astype(numpy.float32)
 
         # Raw data regions for quadrants 1 through 4. Apply gain and reconstruct.
         # Quadrants are 1 to 4
