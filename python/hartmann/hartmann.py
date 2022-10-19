@@ -510,11 +510,11 @@ class HartmannCamera:
             )
 
         m = self.m
-        piston = -int(m * offset)
+        piston = -m * offset
 
         if self.command:
             if "r" in self.camera:
-                self.command.info(**{f"{self.camera}PistonMove": piston})
+                self.command.info(**{f"{self.camera}PistonMove": int(piston)})
             else:
                 self.command.info(
                     **{f"{self.camera}RingMove": round(-piston * self.bsteps, 1)}
