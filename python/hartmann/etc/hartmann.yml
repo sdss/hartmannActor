@@ -36,10 +36,14 @@ coefficients:
     b1: 428.5
     r2: 1
     b2: 1
+  bsteps:
+    r1: null
+    b1: 319.0
+    r2: null
+    b2: 0.04805562
 
 constants:
   pixscale: 15.0
-  bsteps: 319.0
   badres: 4.0
   focustol: 0.20
   maxshift: 2

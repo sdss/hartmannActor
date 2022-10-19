@@ -83,7 +83,7 @@ class CameraResult:
     coeffs: numpy.ndarray = numpy.array([])
     best: int = 0
     offset: float = 0.0
-    bsteps: float = 0.0
+    bsteps: float = 1.0
 
 
 class HartmannCamera:
@@ -137,7 +137,13 @@ class HartmannCamera:
         self.m = m or coefficients["m"][self.camera]
         self.b = b or coefficients["b"][self.camera]
 
-        self.bsteps = bsteps or constants["bsteps"]
+        self.bsteps: float = 1.0
+        if bsteps is not None:
+            self.bsteps = bsteps
+        else:
+            if coefficients["bsteps"][self.camera] is not None:
+                self.bsteps = coefficients["bsteps"][self.camera]
+
         self.focustol = focustol or constants["focustol"]
 
         self.pixscale = constants["pixscale"]
@@ -511,7 +517,7 @@ class HartmannCamera:
                 self.command.info(**{f"{self.camera}PistonMove": piston})
             else:
                 self.command.info(
-                    **{f"{self.camera}RingMove": round(-piston / self.bsteps, 1)}
+                    **{f"{self.camera}RingMove": round(-piston * self.bsteps, 1)}
                 )
 
         return piston, focused
@@ -778,7 +784,7 @@ class Hartmann:
             r_result, b_result = b_result, r_result
 
         avg: float = float(numpy.nanmean([res.piston for res in results]))
-        bres: float = -(b_result.piston - avg) / b_result.bsteps
+        bres: float = -(b_result.piston - avg) * b_result.bsteps
         rres: float = int(r_result.piston - avg)
 
         if numpy.any(numpy.isnan([res.piston for res in results])):
