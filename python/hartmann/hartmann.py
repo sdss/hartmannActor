@@ -826,7 +826,7 @@ class Hartmann:
                 )
             else:
                 resmsg = (
-                    "Bad angle: move blue ring {bres_min:.1f} degrees then "
+                    f"Bad angle: move blue ring {bres_min:.1f} degrees then "
                     "rerun gotoField with Hartmanns checked. This is the "
                     "minimum move needed to get in focus tolerance."
                 )
