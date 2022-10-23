@@ -611,6 +611,49 @@ class Hartmann:
         else:
             raise ValueError("Unexpected error taking Hartmanns.")
 
+    async def _take_hartmann_APO(self, sub_frame: bool = False):  # pragma: no cover
+        """Take Hartmanns at LCO."""
+
+        if self.command is None:
+            raise HartmannError("A command is needed to take Hartmann exposures.")
+
+        exposure_ids = []
+
+        for side in "left", "right":
+
+            window = (
+                "window={0},{1}".format(*self.config["regions"]["subframe"])
+                if sub_frame
+                else ""
+            )
+            exp_time = self.config["specs"][self.spec]["exp_time"]
+
+            command_str = f"exposure arc hartmann={side} itime={exp_time} {window} "
+            command_str += "noflush" if side == "right" else ""
+
+            self.log(logging.INFO, status="exposing")
+
+            hartmann_command = await self.command.send_command("boss", command_str)
+
+            if hartmann_command.status.did_fail:
+                raise HartmannError("Failed taking Hartmann exposures.")
+
+            exposure_id = None
+            for reply in hartmann_command.replies:
+                if "exposureId" in reply.message:
+                    exposure_id = reply.message["exposureId"][0]
+
+            if exposure_id is None:
+                raise HartmannError("Failed taking Hartmann exposures.")
+
+            # NOTE: exposureId is a lagging indicator.
+            exposure_id += 1
+            exposure_ids.append(exposure_id)
+
+            self.command.info(text=f"Got hartmann {side} exposure {exposure_id}")
+
+        return exposure_ids
+
     async def _take_hartmann_LCO(
         self,
         sub_frame: bool | list = False,
@@ -618,6 +661,7 @@ class Hartmann:
         lamps: bool = True,
         keep_lamps: bool = False,
     ):  # pragma: no cover
+        """Take Hartmanns at LCO."""
 
         if self.command is None:
             raise HartmannError("A command is needed to take Hartmann exposures.")
