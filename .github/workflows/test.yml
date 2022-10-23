@@ -15,6 +15,9 @@ jobs:
       matrix:
         python-version: ['3.9', '3.10']
 
+    env:
+      PYTHONPATH: '/home/runner/work/HAL/HAL/actorkeys/python'
+
     steps:
       - uses: actions/checkout@v2
 
@@ -33,6 +36,13 @@ jobs:
           key: ${{ runner.os }}-download-${{ hashFiles('tests/data/files.dat') }}
           restore-keys: |
             ${{ runner.os }}-download-
+
+      - name: Clone actorkeys
+        uses: actions/checkout@master
+        with:
+          repository: sdss/actorkeys
+          ref: sdss5
+          path: actorkeys
 
       - name: Set up Python
         uses: actions/setup-python@v2
