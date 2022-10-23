@@ -16,7 +16,7 @@ jobs:
         python-version: ['3.9', '3.10']
 
     env:
-      PYTHONPATH: '/home/runner/work/HAL/HAL/actorkeys/python'
+      PYTHONPATH: '/home/runner/work/hartmannActor/hartmannActor/actorkeys/python'
 
     steps:
       - uses: actions/checkout@v3
