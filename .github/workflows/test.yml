@@ -19,23 +19,19 @@ jobs:
       PYTHONPATH: '/home/runner/work/HAL/HAL/actorkeys/python'
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Cache Setup
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
 
       - name: Cache downloaded files
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: /home/runner/work/hartmannActor/hartmannActor/tests/data/downloaded
           key: ${{ runner.os }}-download-${{ hashFiles('tests/data/files.dat') }}
-          restore-keys: |
-            ${{ runner.os }}-download-
 
       - name: Clone actorkeys
         uses: actions/checkout@master
@@ -45,7 +41,7 @@ jobs:
           path: actorkeys
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -58,17 +54,17 @@ jobs:
         run: |
           # stop the build if there are Python syntax errors or undefined names
           pip install flake8
-          flake8 . --count --show-source --statistics
+          flake8 python/hartmann --count --show-source --statistics
 
       - name: Lint with isort
         run: |
           pip install isort
-          isort -c python/
+          isort -c python/hartmann
 
       - name: Lint with black
         run: |
           pip install black
-          black --check python/
+          black --check python/hartmann
           black --check tests/
 
       - name: Test with pytest
