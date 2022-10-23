@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "status": { "type": "string" }
+  },
+  "patternProperties": {
+    "sp[0-9]Residuals": {
+      "type": "array",
+      "items": [
+        { "type": "integer" },
+        { "type": "number" },
+        { "type": "string" }
+      ],
+      "minItems": 3,
+      "maxItems": 3,
+      "additionalItems": false
+    },
+    "[rb][0-9]MeanOffset": {
+      "type": "array",
+      "items": [{ "type": "number" }, { "type": "string" }],
+      "minItems": 2,
+      "maxItems": 2,
+      "additionalItems": false
+    },
+    "sp[0-9]AverageMove": { "type": "integer" },
+    "[rb][0-9]PistonMove": { "type": "integer" },
+    "[rb][0-9]RingMove": { "type": "number" }
+  },
+  "additionalProperties": false
+}
