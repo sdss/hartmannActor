@@ -881,7 +881,14 @@ class Hartmann:
 
         self.command.info(text=f"Adjusting collimator by {move} steps.")
 
-        move_command = await self.command.send_command("yao", f"mech move {move}")
+        if self.observatory == "APO":
+            move_command = await self.command.send_command(
+                "boss",
+                f"moveColl spec={self.spec} piston={move}",
+            )
+        else:
+            move_command = await self.command.send_command("yao", f"mech move {move}")
+
         if move_command.status.did_fail:
             self.command.error(error="Failed adjusting collimator.")
             return False
