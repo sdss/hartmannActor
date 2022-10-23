@@ -579,7 +579,7 @@ class Hartmann:
         exp_time: float | None = None,
         lamps: bool = True,
         keep_lamps: bool = False,
-    ) -> list[str]:
+    ) -> list[str]:  # pragma: no cover
         """Takes a pair of Hartmann exposures.
 
         Parameters
@@ -598,6 +598,26 @@ class Hartmann:
             arcs with left and right doors closed, respectively, for each camera.
 
         """
+
+        if self.observatory == "APO":
+            raise NotImplementedError("Taking hartmanns at APO is not yet implemented.")
+        elif self.observatory == "LCO":
+            return await self._take_hartmann_LCO(
+                sub_frame=sub_frame,
+                exp_time=exp_time,
+                lamps=lamps,
+                keep_lamps=keep_lamps,
+            )
+        else:
+            raise ValueError("Unexpected error taking Hartmanns.")
+
+    async def _take_hartmann_LCO(
+        self,
+        sub_frame: bool | list = False,
+        exp_time: float | None = None,
+        lamps: bool = True,
+        keep_lamps: bool = False,
+    ):  # pragma: no cover
 
         if self.command is None:
             raise HartmannError("A command is needed to take Hartmann exposures.")
@@ -843,7 +863,7 @@ class Hartmann:
 
         return self.result
 
-    async def move_motors(self, move: float | int):
+    async def move_motors(self, move: float | int):  # pragma: no cover
         """Moves the motors."""
 
         if self.command is None:

@@ -92,7 +92,7 @@ omit = [
 exclude_lines = [
     "# pragma: no cover",
     "def __repr__",
-    "if TYPE_CHECKING:"
+    "if TYPE_CHECKING:",
 ]
 
 [build-system]
