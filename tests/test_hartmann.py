@@ -41,7 +41,7 @@ def get_image(image_no: int, camera: str = "b1", precooked: bool = False):
     "camera,piston,focused",
     [
         ("b1", 707, True),
-        ("r2", 3471, False),
+        ("r2", 214, False),
     ],
 )
 def test_hartmann_camera(camera, piston, focused, config):
@@ -58,7 +58,7 @@ def test_hartmann_camera(camera, piston, focused, config):
     assert result.focused is focused
 
 
-@pytest.mark.parametrize("spec,move", [("sp1", -141), ("sp2", 3311.5)])
+@pytest.mark.parametrize("spec,move", [("sp1", -141), ("sp2", 473.0)])
 async def test_hartmann_not_focused(spec, move, config):
 
     command = FakeCommand(log)
@@ -126,7 +126,7 @@ def test_hartmann_camera_bad_Ne(caplog, config):
         hc(img1, img2)
 
     assert caplog.records[-1].levelname == "WARNING"
-    assert "r2: 0 of 4 Ne lamps turned on: 0 0 0 0" in caplog.text
+    assert "r2: 0 of 4 Ne lamps are on: 0 0 0 0" in caplog.text
 
 
 def test_hartmann_camera_bad_HgCd(caplog, config):
@@ -140,7 +140,7 @@ def test_hartmann_camera_bad_HgCd(caplog, config):
         hc(img1, img2)
 
     assert caplog.records[-1].levelname == "WARNING"
-    assert "r2: 0 of 4 HgCd lamps turned on: 0 0 0 0" in caplog.text
+    assert "r2: 0 of 4 HgCd lamps are on: 0 0 0 0" in caplog.text
 
 
 def test_hartmann_camera_both_left(config):
@@ -166,5 +166,5 @@ def test_hartmann_camera_command(caplog, config):
 
     assert isinstance(result, CameraResult)
 
-    assert "{'text': 'b1MeanOffset=0.11,\"In Focus\"'}" in caplog.text
-    assert "{'text': 'b1RingMove=-2.2'}" in caplog.text
+    assert "{'b1MeanOffset': [0.11, 'In Focus']}" in caplog.text
+    assert "{'b1RingMove': -2.2}" in caplog.text
