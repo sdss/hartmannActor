@@ -1,5 +1,12 @@
 # Changelog
 
+## Next version
+
+### 🚀 New
+
+* Full refactor using CLU with support for LCO actors and hardware. Most of the functionality, commands, and keywords have not changed, but the calibration values are different because of the removal of the "fudge" factors.
+
+
 ## 2.0.2 (2022-01-07)
 
 ### 🔧 Fixed
