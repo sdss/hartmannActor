@@ -101,10 +101,6 @@ class HartmannCamera:
         Steps per degree for the blue ring.
     focustol
         Allowable focus tolerance in pixels.
-    piston_factor
-        Factor used to calculate the piston move. The piston move is calculated
-        as the measured offset times the piston factor times the pixel size in
-        microns.
     config
         The configuration dictionary. If `None`, uses the default product one.
     command
@@ -120,7 +116,6 @@ class HartmannCamera:
         b: float | None = None,
         bsteps: float | None = None,
         focustol: float | None = None,
-        piston_factor: float | None = None,
         config: dict | None = None,
         command: HartmannCommandType | None = None,
     ):
@@ -145,12 +140,6 @@ class HartmannCamera:
                 self.bsteps = coefficients["bsteps"][self.camera]
 
         self.focustol = focustol or constants["focustol"]
-
-        self.pixscale = constants["pixscale"]
-
-        self.piston_factor = piston_factor or coefficients["piston_factor"][self.camera]
-        self.piston_factor *= self.pixscale
-
         self.maxshift = constants["maxshift"]
 
         self.command = command
@@ -494,7 +483,12 @@ class HartmannCamera:
     def find_collimator_motion(self, offset: float):
         """Compute the required collimator movement."""
 
-        if abs(offset) < self.focustol:
+        piston = self.m * offset + self.b
+
+        offset_corr = piston / self.m
+        piston = -int(piston)
+
+        if abs(offset_corr) < self.focustol:
             focus = "In Focus"
             focused = True
             msglvl = "i"
@@ -506,18 +500,15 @@ class HartmannCamera:
         if self.command:
             self.command.write(
                 msglvl,
-                **{f"{self.camera}MeanOffset": [round(offset, 2), focus]},
+                **{f"{self.camera}MeanOffset": [round(offset_corr, 2), focus]},
             )
-
-        m = self.m
-        piston = -m * offset
 
         if self.command:
             if "r" in self.camera:
-                self.command.info(**{f"{self.camera}PistonMove": int(piston)})
+                self.command.info(**{f"{self.camera}PistonMove": piston})
             else:
                 self.command.info(
-                    **{f"{self.camera}RingMove": round(-piston * self.bsteps, 1)}
+                    **{f"{self.camera}RingMove": round(-piston / self.bsteps, 1)}
                 )
 
         return piston, focused
