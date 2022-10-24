@@ -2,6 +2,10 @@
 
 ## Next version
 
+### 🚀 New
+
+* Added a simple `hartmann status` command.
+
 ### 🔧 Fixed
 
 * A `bsteps` that should be dividing was multiplying.

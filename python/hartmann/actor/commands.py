@@ -164,3 +164,19 @@ async def reprocess(
         return command.fail(str(err))
 
     return command.finish()
+
+
+@hartmann_parser.command()
+async def status(command: HartmannCommandType):
+    """Reports the status of the actor."""
+
+    if command.actor.model is None or "status" not in command.actor.model:
+        status = "unknown"
+    else:
+        status = command.actor.model["status"].value
+        if status is None or (isinstance(status, list) and status[0] is None):
+            status = "unknown"
+
+    command.info(status=status)
+
+    return command.finish()
