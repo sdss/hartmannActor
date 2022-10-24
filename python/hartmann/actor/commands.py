@@ -95,6 +95,8 @@ async def collimate(
         )
     except HartmannError as err:
         return command.fail(str(err))
+    finally:
+        command.info(status="idle")
 
     if result is None or result.success is False:
         return command.fail("Hartmann collimation failed.")
