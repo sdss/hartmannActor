@@ -839,7 +839,7 @@ class Hartmann:
             r_result, b_result = b_result, r_result
 
         avg: float = float(numpy.nanmean([res.piston for res in results]))
-        bres: float = -(b_result.piston - avg) * b_result.bsteps
+        bres: float = -(b_result.piston - avg) / b_result.bsteps
         rres: float = int(r_result.piston - avg)
 
         if numpy.any(numpy.isnan([res.piston for res in results])):
