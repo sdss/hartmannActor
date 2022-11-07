@@ -14,7 +14,7 @@ import click
 
 from clu.parsers.click import command_parser as hartmann_parser
 
-from hartmann import Hartmann, config
+from hartmann import OBSERVATORY, Hartmann, config
 
 from ..exceptions import HartmannError
 
@@ -28,8 +28,8 @@ if TYPE_CHECKING:
 @hartmann_parser.command()
 @click.option("--spec", "-s", type=str, help="The spectrograph to collimate.")
 @click.option(
-    "--sub-frame",
-    "-s",
+    "--sub-frame/--no-sub-frame",
+    default=OBSERVATORY == "APO",
     is_flag=True,
     help="Takes a sub-frame Hartmann pair.",
 )

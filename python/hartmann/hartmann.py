@@ -15,6 +15,7 @@ import os
 import pathlib
 from dataclasses import dataclass
 from functools import partial
+from glob import glob
 
 from typing import TYPE_CHECKING, cast
 
@@ -23,6 +24,9 @@ import numpy.typing
 import scipy.ndimage
 from astropy.io import fits
 
+from sdsstools.time import get_sjd
+
+from hartmann import OBSERVATORY
 from hartmann import config as default_config
 from hartmann import log
 from hartmann.exceptions import HartmannError
@@ -575,7 +579,7 @@ class Hartmann:
 
     async def take_hartmanns(
         self,
-        sub_frame: bool | list = False,
+        sub_frame: bool = False,
         exp_time: float | None = None,
         lamps: bool = True,
         keep_lamps: bool = False,
@@ -600,7 +604,7 @@ class Hartmann:
         """
 
         if self.observatory == "APO":
-            raise NotImplementedError("Taking hartmanns at APO is not yet implemented.")
+            return await self._take_hartmann_APO(sub_frame=sub_frame)
         elif self.observatory == "LCO":
             return await self._take_hartmann_LCO(
                 sub_frame=sub_frame,
@@ -617,7 +621,7 @@ class Hartmann:
         if self.command is None:
             raise HartmannError("A command is needed to take Hartmann exposures.")
 
-        exposure_ids = []
+        filenames = []
 
         for side in "left", "right":
 
@@ -641,22 +645,25 @@ class Hartmann:
             exposure_id = None
             for reply in hartmann_command.replies:
                 if "exposureId" in reply.message:
-                    exposure_id = reply.message["exposureId"][0]
+                    exposure_id = int(reply.message["exposureId"][0])
+                    break
 
             if exposure_id is None:
                 raise HartmannError("Failed taking Hartmann exposures.")
 
             # NOTE: exposureId is a lagging indicator.
             exposure_id += 1
-            exposure_ids.append(exposure_id)
+
+            SJD = get_sjd(OBSERVATORY)
+            filenames += list(glob(f"/data/spectro/{SJD}/*{exposure_id}*"))
 
             self.command.info(text=f"Got hartmann {side} exposure {exposure_id}")
 
-        return exposure_ids
+        return filenames
 
     async def _take_hartmann_LCO(
         self,
-        sub_frame: bool | list = False,
+        sub_frame: bool = False,
         exp_time: float | None = None,
         lamps: bool = True,
         keep_lamps: bool = False,
