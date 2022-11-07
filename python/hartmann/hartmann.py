@@ -622,7 +622,7 @@ class Hartmann:
         for side in "left", "right":
 
             window = (
-                "window={0},{1}".format(*self.config["regions"]["subframe"])
+                "window={0},{1}".format(*self.config["specs"][self.spec]["subframe"])
                 if sub_frame
                 else ""
             )

@@ -14,11 +14,13 @@ specs:
     cameras: [r1, b1]
     exp_time: 4
     lamps: [Ne, HgCd]
+    subframe: [850, 1400]
   sp2:
     observatory: LCO
     cameras: [r2, b2]
     exp_time: 10
     lamps: [Ne, HeAr]
+    subframe: null
 
 coefficients:
   m:
@@ -49,7 +51,6 @@ gain:
   r2: [1.598, 1.656, 1.582, 1.594]
 
 regions:
-  subframe: [850, 1400]
   bias:
     # Quadrants 1 through 4. [y0, y1, x0, x1]
     1: [950, 1339, 10, 101]
@@ -69,3 +70,5 @@ regions:
     r2: [1020, 1300, 1500, 2701]
 
 max_collimator_move: 300
+
+observatory: ${OBSERVATORY}
