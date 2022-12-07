@@ -721,8 +721,8 @@ class Hartmann:
         # Get all the filenames output by the command, unsorted for now.
         filenames: list[str] = []
         for reply in hartmann_command.replies:
-            if "filename" in reply.message:
-                filenames.append(reply.message["filename"][0])
+            if "filenames" in reply.message:
+                filenames += reply.message["filenames"]
 
         return filenames
 
