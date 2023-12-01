@@ -13,7 +13,7 @@ import logging
 import multiprocessing
 import os
 import pathlib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import partial
 from glob import glob
 
@@ -82,8 +82,8 @@ class CameraResult:
     success: bool = False
     focused: bool = False
     piston: float = 0.0
-    ishifts: numpy.ndarray = numpy.array([])
-    coeffs: numpy.ndarray = numpy.array([])
+    ishifts: numpy.ndarray = field(default_factory=lambda: numpy.array([]))
+    coeffs: numpy.ndarray = field(default_factory=lambda: numpy.array([]))
     best: int = 0
     offset: float = 0.0
     bsteps: float = 1.0
