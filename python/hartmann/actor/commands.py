@@ -67,6 +67,7 @@ async def collimate(
     ignore_residuals: bool = False,
     no_lamps: bool = False,
     keep_lamps: bool = False,
+    exposure_time: float | None = None,
 ):
     """Exposes BOSS and adjusts the collimator."""
 
@@ -86,6 +87,7 @@ async def collimate(
             sub_frame=sub_frame,
             lamps=not no_lamps,
             keep_lamps=keep_lamps,
+            exposure_time=exposure_time,
         )
         result = await hartmann.collimate(
             filenames,

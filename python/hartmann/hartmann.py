@@ -197,7 +197,6 @@ class HartmannCamera:
         camera_result = CameraResult(self.camera, bsteps=self.bsteps)
 
         try:
-
             proc1, side1 = self.prepare_image(
                 str(image1),
                 no_check_image=no_check_image,
@@ -578,7 +577,7 @@ class Hartmann:
     async def take_hartmanns(
         self,
         sub_frame: bool = False,
-        exp_time: float | None = None,
+        exposure_time: float | None = None,
         lamps: bool = True,
         keep_lamps: bool = False,
     ) -> list[str]:  # pragma: no cover
@@ -588,8 +587,9 @@ class Hartmann:
         ----------
         sub_frame
             Only readout a part of the chip.
-        exp_time
-            The exposure time for the Hartmanns.
+        exposure_time
+            The exposure time for the Hartmanns. If ``None``, defaults to the
+            configuration file
         keep_lamps
             Do not turn off the lamps after the Hartmann.
 
@@ -606,7 +606,7 @@ class Hartmann:
         elif self.observatory == "LCO":
             return await self._take_hartmann_LCO(
                 sub_frame=sub_frame,
-                exp_time=exp_time,
+                exposure_time=exposure_time,
                 lamps=lamps,
                 keep_lamps=keep_lamps,
             )
@@ -661,7 +661,7 @@ class Hartmann:
     async def _take_hartmann_LCO(
         self,
         sub_frame: bool = False,
-        exp_time: float | None = None,
+        exposure_time: float | None = None,
         lamps: bool = True,
         keep_lamps: bool = False,
     ):  # pragma: no cover
@@ -688,13 +688,13 @@ class Hartmann:
         self.log(logging.INFO, status="exposing")
 
         # TODO: we may need to allow to select what cameras to expose.
-        exp_time = exp_time or self.config["specs"][self.spec]["exp_time"]
-        assert isinstance(exp_time, (float, int))
+        exposure_time = exposure_time or self.config["specs"][self.spec]["exp_time"]
+        assert isinstance(exposure_time, (float, int))
 
         command_str = "hartmann"
         if sub_frame:
             command_str += " --sub-frame"
-        command_str += f" {exp_time}"
+        command_str += f" {exposure_time}"
 
         hartmann_command = await self.command.send_command("yao", command_str)
 
