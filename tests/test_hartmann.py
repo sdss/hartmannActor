@@ -157,4 +157,4 @@ def test_hartmann_camera_command(caplog, config):
     assert isinstance(result, CameraResult)
 
     assert "{'b1MeanOffset': [0.11, 'In Focus']}" in caplog.text
-    assert "{'b1RingMove': -2.2}" in caplog.text
+    assert "{'b1RingMove': -2.22}" in caplog.text
