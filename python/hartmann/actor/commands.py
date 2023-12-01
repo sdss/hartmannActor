@@ -28,6 +28,12 @@ if TYPE_CHECKING:
 @hartmann_parser.command()
 @click.option("--spec", "-s", type=str, help="The spectrograph to collimate.")
 @click.option(
+    "--exposure-time",
+    "-t",
+    type=float,
+    help="Exposure time in seconds. Currently ignored at APO.",
+)
+@click.option(
     "--sub-frame/--no-sub-frame",
     default=OBSERVATORY == "APO",
     is_flag=True,
@@ -47,6 +53,12 @@ if TYPE_CHECKING:
     help="Ignore blue residuals and apply collimator correction.",
 )
 @click.option(
+    "--ignore-errors",
+    is_flag=True,
+    help="Always marks the command as successfully done even when the blue ring is "
+    "not in tolerance. Useful for scripting and focus sweeps.",
+)
+@click.option(
     "--no-lamps",
     "-l",
     is_flag=True,
@@ -61,13 +73,14 @@ if TYPE_CHECKING:
 async def collimate(
     command: HartmannCommandType,
     spec: str | None = None,
+    exposure_time: float | None = None,
     move: bool = True,
     sub_frame: bool = False,
     min_blue_correction: bool = False,
     ignore_residuals: bool = False,
+    ignore_errors: bool = False,
     no_lamps: bool = False,
     keep_lamps: bool = False,
-    exposure_time: float | None = None,
 ):
     """Exposes BOSS and adjusts the collimator."""
 
@@ -100,7 +113,7 @@ async def collimate(
     finally:
         command.info(status="idle")
 
-    if result is None or result.success is False:
+    if ignore_errors is False and (result is None or result.success is False):
         return command.fail("Hartmann collimation failed.")
 
     return command.finish()
