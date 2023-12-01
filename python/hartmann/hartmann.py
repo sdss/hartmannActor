@@ -123,7 +123,6 @@ class HartmannCamera:
         config: dict | None = None,
         command: HartmannCommandType | None = None,
     ):
-
         self.observatory = observatory.upper()
         self.camera = camera.lower()
         self.is_blue = self.camera[0] == "b"
@@ -448,8 +447,8 @@ class HartmannCamera:
         check2[check2 > 1000] = 1000
 
         # ddof=1 for consistency with IDL's variance() which has denominator (N-1)
-        var1 = numpy.var(check1, ddof=1)
-        var2 = numpy.var(check2, ddof=1)
+        var1 = float(numpy.var(check1, ddof=1))
+        var2 = float(numpy.var(check2, ddof=1))
 
         if no_check_image is False and (var1 < 100 or var2 < 100):
             raise HartmannError("There does not appear to be any light from the arcs!")
@@ -544,7 +543,6 @@ class Hartmann:
         config: dict | None = None,
         command: HartmannCommandType | None = None,
     ):
-
         self.observatory = observatory.upper()
         self.config = config or default_config
 
@@ -616,7 +614,7 @@ class Hartmann:
             raise ValueError("Unexpected error taking Hartmanns.")
 
     async def _take_hartmann_APO(self, sub_frame: bool = False):  # pragma: no cover
-        """Take Hartmanns at LCO."""
+        """Take Hartmanns at APO."""
 
         if self.command is None:
             raise HartmannError("A command is needed to take Hartmann exposures.")
@@ -624,7 +622,6 @@ class Hartmann:
         filenames = []
 
         for side in "left", "right":
-
             window = (
                 "window={0},{1}".format(*self.config["specs"][self.spec]["subframe"])
                 if sub_frame
@@ -845,7 +842,7 @@ class Hartmann:
         if r_result.camera != f"r{spec_id}":
             r_result, b_result = b_result, r_result
 
-        avg: float = float(numpy.nanmean([res.piston for res in results]))
+        avg: float = float(numpy.nanmean(numpy.array([res.piston for res in results])))
         bres: float = -(b_result.piston - avg) / b_result.bsteps
         rres: float = int(r_result.piston - avg)
 
