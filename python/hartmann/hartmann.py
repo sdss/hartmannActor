@@ -509,7 +509,7 @@ class HartmannCamera:
                 b_ring_move = round(piston / self.bsteps, 2)
                 self.command.info({f"{self.camera}RingMove": b_ring_move})
 
-        return piston, focused
+        return -int(piston), focused
 
 
 class Hartmann:
