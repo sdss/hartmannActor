@@ -14,7 +14,6 @@ BASE_URL = "https://data.sdss.org/sas/dr17/apo/"
 
 
 def download_data():
-
     cwd = os.path.dirname(__file__)
     files = open(os.path.join(cwd, "data/files.dat"), "r").read().splitlines()
 

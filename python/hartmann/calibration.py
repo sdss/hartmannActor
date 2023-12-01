@@ -108,13 +108,11 @@ def calibrate(
         transient=True,
     ) as progress:
         for camera in cameras:
-
             camera_files = sorted([file_ for file_ in files if camera in str(file_)])
 
             task = progress.add_task(camera, total=len(camera_files))
 
             for ifile in range(len(camera_files) - 1):
-
                 file1 = pathlib.Path(camera_files[ifile])
                 file2 = pathlib.Path(camera_files[ifile + 1])
 
@@ -165,7 +163,6 @@ def calibrate(
                 regions = regions or [None]
 
                 for ii, region in enumerate(regions):
-
                     try:
                         result = hc(file1, file2, analysis_region=region)
                     except Exception as err:
@@ -205,20 +202,17 @@ def calibrate(
     # pixel offset to collimator offset around zero, we first convert the collimator
     # units to pixels.
     for camera in cameras:
-
         data_cam = data.loc[data.camera == camera]
 
         n_regions = len(data_cam.region.unique())
 
         with plt.ioff():
             with seaborn.axes_style("darkgrid"):
-
                 fig, ax = plt.subplots()
 
                 m = b = None
 
                 for nr, ir in enumerate(data_cam.region.unique()):
-
                     # Calculate the fit coefficients using a polynomial fit.
                     dr = data_cam.loc[data_cam.region == ir]
                     m, b = numpy.polyfit(dr.offset, dr.collimator, 1)

@@ -13,7 +13,6 @@ class HartmannError(Exception):
     """A custom core hartmann exception"""
 
     def __init__(self, message=None):
-
         message = "There has been an error" if not message else message
 
         super(HartmannError, self).__init__(message)

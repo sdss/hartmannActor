@@ -26,9 +26,8 @@ from astropy.io import fits
 
 from sdsstools.time import get_sjd
 
-from hartmann import OBSERVATORY
+from hartmann import OBSERVATORY, log
 from hartmann import config as default_config
-from hartmann import log
 from hartmann.exceptions import HartmannError
 
 

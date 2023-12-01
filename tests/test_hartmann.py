@@ -19,7 +19,6 @@ from hartmann.exceptions import HartmannError
 
 
 def get_image(image_no: int, camera: str = "b1", precooked: bool = False):
-
     data = pathlib.Path(__file__).parent / "data"
 
     if precooked:
@@ -45,7 +44,6 @@ def get_image(image_no: int, camera: str = "b1", precooked: bool = False):
     ],
 )
 def test_hartmann_camera(camera, piston, focused, config):
-
     im1 = get_image(244721, camera)
     im2 = get_image(244722, camera)
 
@@ -60,7 +58,6 @@ def test_hartmann_camera(camera, piston, focused, config):
 
 @pytest.mark.parametrize("spec,move", [("sp1", -141), ("sp2", 473.0)])
 async def test_hartmann_not_focused(spec, move, config):
-
     command = FakeCommand(log)
 
     hartmann = Hartmann("APO", spec, command=command, config=config)  # type: ignore
@@ -81,7 +78,6 @@ async def test_hartmann_not_focused(spec, move, config):
 
 
 def test_hartmann_camera_reset(config):
-
     hc = HartmannCamera("APO", "b1", config=config)
     hc.reset()
 
@@ -91,7 +87,6 @@ def test_hartmann_camera_reset(config):
 
 
 def test_hartmann_camera_same_side_fails(config):
-
     im1 = get_image(244721, "b1")
     im2 = get_image(244721, "b1")
 
@@ -102,7 +97,6 @@ def test_hartmann_camera_same_side_fails(config):
 
 
 def test_hartmann_camera_bad_ffs(caplog, config):
-
     img1 = get_image(268179, "b2")
     img2 = get_image(268180, "b2")
 
@@ -116,7 +110,6 @@ def test_hartmann_camera_bad_ffs(caplog, config):
 
 
 def test_hartmann_camera_bad_Ne(caplog, config):
-
     img1 = get_image(169558, "r2", precooked=True)
     img2 = get_image(169559, "r2", precooked=True)
 
@@ -130,7 +123,6 @@ def test_hartmann_camera_bad_Ne(caplog, config):
 
 
 def test_hartmann_camera_bad_HgCd(caplog, config):
-
     img1 = get_image(169560, "r2", precooked=True)
     img2 = get_image(169561, "r2", precooked=True)
 
@@ -144,7 +136,6 @@ def test_hartmann_camera_bad_HgCd(caplog, config):
 
 
 def test_hartmann_camera_both_left(config):
-
     img1 = get_image(169552, "r2", precooked=True)
     img2 = get_image(169553, "r2", precooked=True)
 
@@ -155,7 +146,6 @@ def test_hartmann_camera_both_left(config):
 
 
 def test_hartmann_camera_command(caplog, config):
-
     command = FakeCommand(log)
 
     im1 = get_image(244721, "b1")

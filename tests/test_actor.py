@@ -16,12 +16,10 @@ from hartmann.exceptions import HartmannError
 
 
 async def test_actor(actor):
-
     assert isinstance(actor, HartmannActor)
 
 
 async def test_actor_no_observatory(monkeypatch):
-
     monkeypatch.delenv("OBSERVATORY", raising=False)
 
     with pytest.raises(HartmannError):

@@ -29,7 +29,6 @@ async def config():
 
 @pytest_asyncio.fixture
 async def actor(config):
-
     actor_ = HartmannActor.from_config(config, observatory="APO")
     await setup_test_actor(actor_)  # type: ignore
 

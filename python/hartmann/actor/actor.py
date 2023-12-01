@@ -24,7 +24,6 @@ class HartmannActor(clu.LegacyActor):
     """The hartmann SDSS-style actor."""
 
     def __init__(self, *args, observatory: str | None = None, **kwargs):
-
         if "schema" not in kwargs:
             base = os.path.join(os.path.dirname(__file__), "..")
             base_schema = os.path.realpath(os.path.join(base, "etc/schema.json"))
