@@ -27,6 +27,13 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
 
+      - name: Clone actorkeys
+        uses: actions/checkout@master
+        with:
+          repository: sdss/actorkeys
+          ref: sdss5
+          path: actorkeys
+
       - name: Install dependencies
         run: |
           pip install --upgrade wheel pip setuptools
