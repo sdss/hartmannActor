@@ -486,9 +486,7 @@ class HartmannCamera:
         """Compute the required collimator movement."""
 
         piston = self.m * offset + self.b
-
         offset_corr = piston / self.m
-        piston = -int(piston)
 
         if abs(offset_corr) < self.focustol:
             focus = "In Focus"
@@ -502,16 +500,15 @@ class HartmannCamera:
         if self.command:
             self.command.write(
                 msglvl,
-                **{f"{self.camera}MeanOffset": [round(offset_corr, 2), focus]},
+                message={f"{self.camera}MeanOffset": [round(offset_corr, 2), focus]},
             )
 
         if self.command:
             if "r" in self.camera:
-                self.command.info(**{f"{self.camera}PistonMove": piston})
+                self.command.info(**{f"{self.camera}PistonMove": -int(piston)})
             else:
-                self.command.info(
-                    **{f"{self.camera}RingMove": round(-piston / self.bsteps, 1)}
-                )
+                b_ring_move = round(piston / self.bsteps, 2)
+                self.command.info({f"{self.camera}RingMove": b_ring_move})
 
         return piston, focused
 
