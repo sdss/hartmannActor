@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sdss-hartmannActor"
-version = "3.0.0"
+version = "3.0.1a0"
 description = "An actor to analyse hartmann images and apply corrections."
 authors = ["José Sánchez-Gallego <gallegoj@uw.edu>", "John Parejko <parejkoj@uw.edu>"]
 license = "BSD-3-Clause"
