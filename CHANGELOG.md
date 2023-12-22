@@ -5,6 +5,11 @@
 ### 🚀 New
 
 * Added a simple `hartmann status` command.
+* Added `--exposure-time` and `--ignore-errors` options to `collimate`.
+
+### 🏷️ Changed
+
+* Change `xxRingMove` precision to two decimals.
 
 ### 🔧 Fixed
 
