@@ -876,7 +876,7 @@ class Hartmann:
         else:
             if not min_blue_correction:
                 resmsg = (
-                    f"Bad angle: move blue ring {bres*2:.1f} degrees then rerun "
+                    f"Bad angle: move blue ring {bres * 2:.1f} degrees then rerun "
                     "gotoField with Hartmanns checked."
                 )
             else:
