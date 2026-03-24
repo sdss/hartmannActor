@@ -51,20 +51,9 @@ dev = [
     "ruff>=0.15.7",
     "ty>=0.0.24",
 ]
-docs = [
-    "rstcheck>=6.0.0",
-    "Sphinx>=9.0.0",
-    "sphinx-click>=6.2.0",
-    "sphinx-jsonschema>=1.16.7",
-    "myst-parser>=5.0.0",
-    "furo>=2025.12.19",
-    "nox>=2021.6.12",
-    "sphinx-autobuild>=2025.8.25",
-    "sphinx-copybutton>=0.3.3",
-]
 
 [tool.uv]
-default-groups = ["dev", "docs"]
+default-groups = ["dev"]
 
 [tool.ruff]
 line-length = 88
