@@ -40,7 +40,9 @@ NAME = "sdss-hartmannActor"
 OBSERVATORY = "APO"  # Gets overridden by set_observatory()
 config: dict[str, Any] = set_observatory(os.environ.get("OBSERVATORY", None))
 
-log = get_logger(NAME)
+log = get_logger(NAME, use_rich_handler=True)
+console = log.rich_console
+
 
 # package name should be pip package name
 __version__ = get_package_version(path=__file__, package_name=NAME)
