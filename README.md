@@ -1,6 +1,6 @@
 # hartmannActor
 
-![Versions](https://img.shields.io/badge/python->=3.9-blue)
+![Versions](https://img.shields.io/badge/python->=3.11-blue)
 [![Test](https://github.com/sdss/hartmannActor/actions/workflows/test.yml/badge.svg)](https://github.com/sdss/hartmannActor/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/sdss/hartmannActor/branch/main/graph/badge.svg)](https://codecov.io/gh/sdss/hartmannActor)
 
