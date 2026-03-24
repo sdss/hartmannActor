@@ -23,6 +23,7 @@ jobs:
 
     env:
       PYTHONPATH: '/home/runner/work/hartmannActor/hartmannActor/actorkeys/python'
+      OBSERVATORY: 'APO'
 
     steps:
       - uses: actions/checkout@v6
