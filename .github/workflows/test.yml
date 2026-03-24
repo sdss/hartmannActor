@@ -21,8 +21,18 @@ jobs:
       matrix:
         python-version: ['3.11', '3.12', '3.13', '3.14']
 
+    env:
+      PYTHONPATH: '/home/runner/work/hartmannActor/hartmannActor/actorkeys/python'
+
     steps:
       - uses: actions/checkout@v6
+
+      - name: Clone actorkeys
+        uses: actions/checkout@v6
+        with:
+          repository: sdss/actorkeys
+          ref: sdss5
+          path: actorkeys
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -40,6 +50,7 @@ jobs:
 
       - name: Test with pytest
         run: |
+          uv run python3 tests/download_data.py
           uv run pytest
 
       - name: Upload coverage to Codecov
