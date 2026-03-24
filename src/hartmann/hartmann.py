@@ -272,8 +272,8 @@ class HartmannCamera:
             raise HartmannError(f"Failed verifying image {image}.")
 
         # OBSCOMM only exists in dithered flats taken with "specFlats"
-        obscomm: str | None = header.get("OBSCOMM", None)  # type: ignore
-        hartmann: str | None = header.get("HARTMANN", None)  # type: ignore
+        obscomm: str | None = header.get("OBSCOMM", None)
+        hartmann: str | None = header.get("HARTMANN", None)
 
         if obscomm == "{focus, hartmann l}":
             side = "left"
