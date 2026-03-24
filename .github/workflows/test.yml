@@ -53,7 +53,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync --no-dev --frozen
+          uv sync --group dev --frozen
 
       - name: Test with pytest
         run: |

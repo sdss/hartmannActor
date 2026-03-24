@@ -484,8 +484,8 @@ class HartmannCamera:
     def find_collimator_motion(self, offset: float):
         """Compute the required collimator movement."""
 
-        piston = self.m * offset + self.b
-        offset_corr = piston / self.m
+        piston = float(self.m * offset + self.b)
+        offset_corr = float(piston / self.m)
 
         if abs(offset_corr) < self.focustol:
             focus = "In Focus"
