@@ -1,5 +1,16 @@
 # Changelog
 
+## Next release
+
+### 🔥 Breaking changes
+
+* The minimum Python version is now 3.11.
+
+### ⚙️ Engineering
+
+* [#18](https://github.com/sdss/hartmannActor/pull/18) Update the package to use `uv` for dependency management and build system. Updated GitHub workflows. Use `ty` for type checking, and other internal improvements.
+
+
 ## 3.0.0 (2023-12-22)
 
 ### 🚀 New

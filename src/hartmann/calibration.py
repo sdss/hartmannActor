@@ -168,7 +168,7 @@ def calibrate(
                     except Exception as err:
                         warnings.warn(
                             f"Exception processing files {file1!s} "
-                            f"and {file2!s}, region {ii+1}: {err}",
+                            f"and {file2!s}, region {ii + 1}: {err}",
                             HartmannUserWarning,
                         )
                         continue
@@ -236,10 +236,10 @@ def calibrate(
                         xplot,
                         yplot,
                         f"{colour}-",
-                        label=rf"${nr+1}: y={m:.3f}x+{b:.3f}$",
+                        label=rf"${nr + 1}: y={m:.3f}x+{b:.3f}$",
                     )
 
-                    print(f"{camera} ({nr+1}): m={m:.3f} b={b:.3f} [pixels]")
+                    print(f"{camera} ({nr + 1}): m={m:.3f} b={b:.3f} [pixels]")
 
                 ax.legend()
                 ax.set_xlabel("Offset [pixels]")

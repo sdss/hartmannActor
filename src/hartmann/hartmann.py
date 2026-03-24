@@ -272,8 +272,8 @@ class HartmannCamera:
             raise HartmannError(f"Failed verifying image {image}.")
 
         # OBSCOMM only exists in dithered flats taken with "specFlats"
-        obscomm: str | None = header.get("OBSCOMM", None)  # type: ignore
-        hartmann: str | None = header.get("HARTMANN", None)  # type: ignore
+        obscomm: str | None = header.get("OBSCOMM", None)
+        hartmann: str | None = header.get("HARTMANN", None)
 
         if obscomm == "{focus, hartmann l}":
             side = "left"
@@ -484,8 +484,8 @@ class HartmannCamera:
     def find_collimator_motion(self, offset: float):
         """Compute the required collimator movement."""
 
-        piston = self.m * offset + self.b
-        offset_corr = piston / self.m
+        piston = float(self.m * offset + self.b)
+        offset_corr = float(piston / self.m)
 
         if abs(offset_corr) < self.focustol:
             focus = "In Focus"
@@ -876,7 +876,7 @@ class Hartmann:
         else:
             if not min_blue_correction:
                 resmsg = (
-                    f"Bad angle: move blue ring {bres*2:.1f} degrees then rerun "
+                    f"Bad angle: move blue ring {bres * 2:.1f} degrees then rerun "
                     "gotoField with Hartmanns checked."
                 )
             else:
